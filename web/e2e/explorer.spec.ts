@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import zlib from "node:zlib";
 import { expect, test, type Page } from "@playwright/test";
 
 // web/package.json has "type": "module", so Playwright loads this spec as ESM and __dirname is
@@ -8,6 +9,22 @@ import { expect, test, type Page } from "@playwright/test";
 // import.meta.dirname directly, which is what this resolves to).
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fx = (name: string) => readFileSync(path.join(dirname, "../tests/fixtures", name));
+
+// Builds a LEO snapshot fixture for a second generation: same records, a different publish time
+// in its header. Same length in, same length out keeps the header's byte-length field and record
+// alignment valid, so this is a plain byte-level patch, not a re-encode. Used by the swap test
+// below, which otherwise can't tell "the new generation's snapshot arrived" from "the old one's
+// did again" — the mocked API serves the same fixture bytes for every generation.
+function withPublishTime(gz: Buffer, oldIso: string, newIso: string): Buffer {
+  if (newIso.length !== oldIso.length) throw new Error("replacement publish time must be the same length");
+  const raw = zlib.gunzipSync(gz);
+  const oldBytes = Buffer.from(oldIso, "utf-8");
+  const at = raw.indexOf(oldBytes);
+  if (at === -1) throw new Error("publish time not found in fixture header");
+  const patched = Buffer.from(raw);
+  Buffer.from(newIso, "utf-8").copy(patched, at);
+  return zlib.gzipSync(patched);
+}
 
 async function mockApi(page: Page, overrides: Record<string, { status: number; body?: Buffer | string }> = {}) {
   await page.route("**/api/**", async (route) => {
@@ -405,6 +422,21 @@ test("a failed higher-orbits load is named in the pill and Retry recovers it", a
 test("a newly published generation replaces the orbits without a reload and keeps the selection", async ({ page }) => {
   await page.clock.setSystemTime(hoursAfterFixture(2));
   await mockApi(page);
+  const NEW_GEN = "20260926T064100Z-r43";
+  // The default mock (mockApi) serves the same LEO snapshot bytes, with the same header publish
+  // time, no matter which generation is asked for — fine for every other test, but this one needs
+  // to tell "the new generation's own snapshot arrived" apart from "the old one's did again".
+  // Patch a copy of the fixture with a different header time and serve it only for NEW_GEN's LEO
+  // request (registered after mockApi's route so it takes priority; see the comment on the
+  // timeseries route override elsewhere in this file for why that ordering works).
+  const patchedLeo = withPublishTime(fx("snapshot-leo.bin.gz"), "2026-09-23T12:00:00+00:00", "2026-09-23T13:00:00+00:00");
+  await page.route("**/api/globe/snapshot**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("group") === "LEO" && url.searchParams.get("gen") === NEW_GEN) {
+      return route.fulfill({ status: 200, body: patchedLeo, contentType: "application/octet-stream" });
+    }
+    return route.fallback();
+  });
   let generation = "20260924T004100Z-r42";
   await page.route("**/api/globe/current", (route) =>
     route.fulfill({
@@ -414,13 +446,13 @@ test("a newly published generation replaces the orbits without a reload and keep
     }),
   );
   const snapshotGenerations: (string | null)[] = [];
-  let metaRequests = 0;
-  let timeseriesRequests = 0;
+  const metaGens: (string | null)[] = [];
+  const timeseriesGens: (string | null)[] = [];
   page.on("request", (r) => {
     const u = new URL(r.url());
     if (u.pathname === "/api/globe/snapshot") snapshotGenerations.push(u.searchParams.get("gen"));
-    if (u.pathname === "/api/meta") metaRequests++;
-    if (u.pathname === "/api/stats/timeseries") timeseriesRequests++;
+    if (u.pathname === "/api/meta") metaGens.push(u.searchParams.get("gen"));
+    if (u.pathname === "/api/stats/timeseries") timeseriesGens.push(u.searchParams.get("gen"));
   });
   await page.goto("/");
   await page.getByLabel("Find an object").fill("ISS");
@@ -430,16 +462,29 @@ test("a newly published generation replaces the orbits without a reload and keep
   // finish (the pill showing an age, not just "LIVE"), the visibilitychange below can race the
   // in-flight first load and fire a check() that no-ops, leaving nothing to poll for.
   await expect(page.getByTestId("live-badge")).toContainText("2h ago");
-  const metaBefore = metaRequests;
-  const timeseriesBefore = timeseriesRequests;
-  generation = "20260926T064100Z-r43";
+  // The first load's requests carry no `gen` (dataVersion is still 0): today's plain URLs. (Dev's
+  // Strict Mode can fire an effect's fetch twice — mount, cleanup, remount — so this checks every
+  // request seen so far rather than an exact count.)
+  expect(metaGens.every((g) => g === null)).toBe(true);
+  expect(timeseriesGens.every((g) => g === null)).toBe(true);
+  const metaBefore = metaGens.length;
+  const timeseriesBefore = timeseriesGens.length;
+  generation = NEW_GEN;
   // A check runs whenever the tab becomes visible; the page is visible, so this triggers one.
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-  await expect.poll(() => snapshotGenerations).toContain("20260926T064100Z-r43");
-  await expect.poll(() => metaRequests).toBeGreaterThan(metaBefore);
-  await expect.poll(() => timeseriesRequests).toBeGreaterThan(timeseriesBefore);
+  await expect.poll(() => snapshotGenerations).toContain(NEW_GEN);
+  // The refetches this swap triggers carry `gen=<new generation>`, busting past the CDN's cache
+  // on /meta and /stats/timeseries (see globeData's `dataGeneration` and page.tsx).
+  await expect.poll(() => metaGens.length).toBeGreaterThan(metaBefore);
+  await expect.poll(() => timeseriesGens.length).toBeGreaterThan(timeseriesBefore);
+  expect(metaGens.slice(metaBefore)).toContain(NEW_GEN);
+  expect(timeseriesGens.slice(timeseriesBefore)).toContain(NEW_GEN);
   await expect(page.getByTestId("object-card")).toBeVisible();
-  await expect(page.getByTestId("live-badge")).toContainText("LIVE");
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("LIVE");
+  // The pill's title reflects the *new* snapshot's own publish time (13:00), not the pointer's
+  // generated_at (still 12:00 above) or the old snapshot's — proof the swap used NEW_GEN's file.
+  await expect(pill).toHaveAttribute("title", "Elements published 2026-09-23 13:00 UTC");
 });
 
 test("search says when nothing matches, and offers Retry when it fails", async ({ page }) => {

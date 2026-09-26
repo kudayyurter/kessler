@@ -50,6 +50,9 @@ export interface TimeseriesQuery {
   from?: number;
   to?: number;
   top?: number;
+  /** Busts the CDN's cache (s-maxage on /stats/*) after a newly published globe generation swaps
+   * in — see page.tsx and store.ts's `dataGeneration`. FastAPI ignores unknown query params. */
+  gen?: string;
 }
 
 export interface BreakdownQuery {
@@ -59,16 +62,23 @@ export interface BreakdownQuery {
   types?: readonly ObjectType[];
   regimes?: readonly Regime[];
   top?: number;
+  gen?: string;
 }
 
 type GlobeGroup = "LEO" | "HIGH";
 
+// Pointer requests time out well before the 10-minute poll interval so a hung request never
+// blocks every later check for the session (check() awaits it); snapshots are larger and get more
+// room. AbortSignal.timeout needs no cleanup — the signal fires once and is done.
+const POINTER_TIMEOUT_MS = 15_000;
+const SNAPSHOT_TIMEOUT_MS = 60_000;
+
 /** A globe file from `generation`, or from the current generation if that one has been deleted
  * (a page reads the pointer once, and old generations are removed after a while). */
 async function fetchGlobeFile(path: string, group: GlobeGroup, generation?: string): Promise<Response> {
-  const res = await fetch(`/api${path}${buildQuery({ group, gen: generation })}`);
+  const res = await fetch(`/api${path}${buildQuery({ group, gen: generation })}`, { signal: AbortSignal.timeout(SNAPSHOT_TIMEOUT_MS) });
   if (res.status !== 404 || generation === undefined) return res;
-  return fetch(`/api${path}${buildQuery({ group })}`);
+  return fetch(`/api${path}${buildQuery({ group })}`, { signal: AbortSignal.timeout(SNAPSHOT_TIMEOUT_MS) });
 }
 
 export interface GlobeCurrent {
@@ -78,7 +88,7 @@ export interface GlobeCurrent {
 }
 
 export const api = {
-  meta: () => getJson<Meta>("/meta"),
+  meta: (gen?: string) => getJson<Meta>(`/meta${buildQuery({ gen })}`),
   timeseries: (q: TimeseriesQuery) => getJson<TimeseriesResponse>(`/stats/timeseries${buildQuery({ ...q })}`),
   breakdown: (q: BreakdownQuery) => getJson<BreakdownResponse>(`/stats/breakdown${buildQuery({ ...q })}`),
   events: () => getJson<BreakupEvent[]>("/events"),
@@ -86,7 +96,7 @@ export const api = {
   search: (q: string) => getJson<SearchResult[]>(`/objects/search${buildQuery({ q })}`),
   /** The published globe generation, or null before the first one exists. */
   async current(): Promise<GlobeCurrent | null> {
-    const res = await fetch("/api/globe/current");
+    const res = await fetch("/api/globe/current", { signal: AbortSignal.timeout(POINTER_TIMEOUT_MS) });
     if (res.status === 404) return null;
     if (!res.ok) throw await toError(res);
     return (await res.json()) as GlobeCurrent;

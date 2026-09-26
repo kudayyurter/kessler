@@ -33,6 +33,7 @@ export default function Explorer() {
   const types = useExplorer((s) => s.types);
   const orbits = useExplorer((s) => s.orbits);
   const dataVersion = useExplorer((s) => s.dataVersion);
+  const dataGeneration = useExplorer((s) => s.dataGeneration);
   const hydratePanels = useExplorer((s) => s.hydratePanels);
   // null until hydrated: the server HTML (and the hydration pass) renders both layout shells and
   // CSS (`sheet:` / `wide:` variants) shows the right one, so first paint never flashes the wrong
@@ -46,15 +47,18 @@ export default function Explorer() {
   // Re-fetched whenever the globe swaps in a newly published generation (dataVersion); a failed
   // refresh keeps the numbers already shown, and `keepPrevIfEqual` keeps the same object identity
   // when the payload didn't actually change, so Overview's tiles don't replay their count-up.
+  // dataVersion > 0 means this run is such a refetch (the first load, version 0, keeps today's
+  // plain URL): add `gen` so the CDN's cache (s-maxage=600 on /meta) can't answer with
+  // pre-publication data for its whole TTL.
   useEffect(() => {
     let cancelled = false;
-    api.meta()
+    api.meta(dataVersion > 0 ? dataGeneration : undefined)
       .then((d) => !cancelled && setMeta((m) => ({ data: keepPrevIfEqual(m.data, d), error: false })))
       .catch(() => !cancelled && setMeta((m) => (m.data ? m : { data: null, error: true })));
     return () => {
       cancelled = true;
     };
-  }, [dataVersion]);
+  }, [dataVersion, dataGeneration]);
 
   // The filter selection (owners/types/orbits) that produced the chart data currently shown —
   // compared against on a failed refetch (see below) to tell "the same filters' data just failed
@@ -69,7 +73,10 @@ export default function Explorer() {
     let cancelled = false;
     const regimes = regimesFor(orbits);
     const key = JSON.stringify({ owners, types, orbits });
-    api.timeseries({ group_by: "type", owners, types, regimes, from: 1960 })
+    // See the meta effect above: only a dataVersion-driven refetch adds `gen`, to bust the CDN's
+    // cache on /stats/* (s-maxage=3600) without changing the first load's URL.
+    const gen = dataVersion > 0 ? dataGeneration : undefined;
+    api.timeseries({ group_by: "type", owners, types, regimes, from: 1960, gen })
       .then((d) => {
         if (cancelled) return;
         tsShownKey.current = key;
@@ -81,7 +88,7 @@ export default function Explorer() {
         // already shown; these filters' own request failing shows the error, as before.
         setTs((m) => (m.data && tsShownKey.current === key ? m : { data: null, error: true }));
       });
-    api.breakdown({ by: "owner", types, regimes, top: 5 })
+    api.breakdown({ by: "owner", types, regimes, top: 5, gen })
       .then((d) => {
         if (cancelled) return;
         barsShownKey.current = key;
@@ -94,7 +101,7 @@ export default function Explorer() {
     return () => {
       cancelled = true;
     };
-  }, [owners, types, orbits, dataVersion]);
+  }, [owners, types, orbits, dataVersion, dataGeneration]);
 
   const ctx: PanelCtx = { meta, ts, bars };
   const panel = (id: PanelId, extra = "") => (

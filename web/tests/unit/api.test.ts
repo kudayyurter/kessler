@@ -114,4 +114,50 @@ describe("api", () => {
     expect(await api.names("LEO", "20260925T064112Z-r42")).toEqual({ "1": "A" });
     expect((names.mock.calls[0] as unknown[])[0]).toBe("/api/globe/names?group=LEO&gen=20260925T064112Z-r42");
   });
+
+  // The CDN caches /meta and /stats/* for minutes to hours; a refetch triggered by a newly
+  // published globe generation must bust past that cache (the proxy passes unknown query params
+  // through, FastAPI ignores them) or it can keep serving pre-publication data for the CDN's
+  // whole TTL. See globeData's `dataGeneration` (store.ts) and page.tsx.
+  it("adds gen to meta/timeseries/breakdown when given, and omits it otherwise", async () => {
+    let fn = stubFetch(Response.json({}));
+    await api.meta();
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/meta");
+    fn = stubFetch(Response.json({}));
+    await api.meta("20260926T064100Z-r43");
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/meta?gen=20260926T064100Z-r43");
+
+    fn = stubFetch(Response.json({ metric: "in_orbit", group_by: "type", years: [], series: [] }));
+    await api.timeseries({ group_by: "type", from: 2006 });
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/stats/timeseries?group_by=type&from=2006");
+    fn = stubFetch(Response.json({ metric: "in_orbit", group_by: "type", years: [], series: [] }));
+    await api.timeseries({ group_by: "type", from: 2006, gen: "20260926T064100Z-r43" });
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/stats/timeseries?group_by=type&from=2006&gen=20260926T064100Z-r43");
+
+    fn = stubFetch(Response.json({ by: "owner", at: 0, items: [] }));
+    await api.breakdown({ by: "owner", top: 5, gen: "20260926T064100Z-r43" });
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/stats/breakdown?by=owner&top=5&gen=20260926T064100Z-r43");
+  });
+
+  // A request that never settles must not block every later check for the session — see
+  // globeData.ts `check()`, which awaits `api.current()` (the pointer). AbortSignal.timeout gives
+  // it (and the snapshot fetches) a hard ceiling.
+  it("times out the pointer fetch", async () => {
+    const fn = stubFetch(Response.json({ error: { code: "not_found", message: "none" } }, { status: 404 }));
+    await api.current();
+    const init = (fn.mock.calls[0] as unknown[])[1] as RequestInit | undefined;
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("times out snapshot and names fetches", async () => {
+    let fn = stubFetch(new Response(new Uint8Array([1])));
+    await api.snapshot("LEO");
+    let init = (fn.mock.calls[0] as unknown[])[1] as RequestInit | undefined;
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+
+    fn = stubFetch(Response.json({ generated_at: null, names: {} }));
+    await api.names("LEO");
+    init = (fn.mock.calls[0] as unknown[])[1] as RequestInit | undefined;
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
 });

@@ -30,7 +30,13 @@ export function useGlobeData(wantHigh: boolean): GlobeData & { retry: (g: GroupN
           if (document.visibilityState === "visible") cb();
         };
         document.addEventListener("visibilitychange", handler);
-        return () => document.removeEventListener("visibilitychange", handler);
+        // A laptop can wake with the tab already visible, before the network is back — `online`
+        // fires in that case even though visibilitychange didn't.
+        window.addEventListener("online", handler);
+        return () => {
+          document.removeEventListener("visibilitychange", handler);
+          window.removeEventListener("online", handler);
+        };
       },
     });
     return () => {

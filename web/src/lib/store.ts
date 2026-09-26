@@ -22,6 +22,11 @@ interface ExplorerState extends Filters {
   // Bumped by GlobeSection whenever a newly published generation is swapped in (see
   // createGlobeData's `version`); the page re-fetches the overview and charts when it changes.
   dataVersion: number;
+  // The shown generation string, set alongside `dataVersion`. The CDN caches /meta and
+  // /stats/* for minutes to hours, so a refetch keyed only on `dataVersion` (which is per-tab and
+  // starts at 0 in every tab) can still get pre-publication data back from cache; the page adds
+  // this to those requests instead, once dataVersion says a swap actually happened.
+  dataGeneration: string | undefined;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -33,10 +38,11 @@ interface ExplorerState extends Filters {
   setMobileSheetTop: (top: number | null) => void;
   setTopBarBottom: (bottom: number | null) => void;
   setDataVersion: (v: number) => void;
+  setDataGeneration: (g: string | undefined) => void;
   reset: () => void;
 }
 
-const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mobileSheetOpen" | "mobileSheetTop" | "topBarBottom" | "dataVersion"> => ({
+const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mobileSheetOpen" | "mobileSheetTop" | "topBarBottom" | "dataVersion" | "dataGeneration"> => ({
   types: [...OBJECT_TYPES],
   owners: [],
   orbits: { leo: true, high: false },
@@ -46,6 +52,7 @@ const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mob
   mobileSheetTop: null,
   topBarBottom: null,
   dataVersion: 0,
+  dataGeneration: undefined,
 });
 
 export const useExplorer = create<ExplorerState>((set) => ({
@@ -80,6 +87,7 @@ export const useExplorer = create<ExplorerState>((set) => ({
   setMobileSheetTop: (mobileSheetTop) => set({ mobileSheetTop }),
   setTopBarBottom: (topBarBottom) => set({ topBarBottom }),
   setDataVersion: (dataVersion) => set({ dataVersion }),
+  setDataGeneration: (dataGeneration) => set({ dataGeneration }),
   reset: () => set(initial()),
 }));
 
