@@ -1,9 +1,11 @@
 /** The globe status pill's state, derived from the globe data (see createGlobeData) — pure, so
  * every row of the spec's table is unit-tested. */
 
+import type { GroupName, GroupStatus } from "@/lib/globeData";
+
 export type Tone = "green" | "amber" | "red" | "grey";
-export type PillGroup = "LEO" | "HIGH";
-export type PillGroupStatus = "idle" | "loading" | "ready" | "missing" | "error";
+export type PillGroup = GroupName;
+export type PillGroupStatus = GroupStatus;
 
 export interface PillInput {
   groups: Record<PillGroup, { status: PillGroupStatus }>;
