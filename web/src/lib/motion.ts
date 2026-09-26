@@ -11,10 +11,17 @@ export function prefersReducedMotion(): boolean {
  * it — e.g. in a `useEffect` cleanup — to stop a stale tween from overwriting the
  * value after the component re-renders with new data. Pass the previously shown value as `from`
  * so a later update (e.g. a background refresh) counts up from there instead of resetting to 0.
+ * `onValue`, called with the value actually on screen on every tick (and once with `to` on the
+ * reduced-motion path), lets a caller track that instead of the target: recording the target
+ * itself as "shown" the moment the tween starts is wrong on two counts — an update arriving
+ * mid-tween would count up from a value never actually displayed, and under Strict Mode's
+ * mount-cleanup-remount, the remount would then animate target->target (no visible count-up at
+ * all) because "shown" jumped to the target before the first tween was cancelled.
  */
-export function countUp(el: HTMLElement, to: number, delayMs = 0, from = 0): JSAnimation | null {
+export function countUp(el: HTMLElement, to: number, delayMs = 0, from = 0, onValue?: (v: number) => void): JSAnimation | null {
   if (prefersReducedMotion()) {
     el.textContent = fmtInt(to);
+    onValue?.(to);
     return null;
   }
   const o = { v: from };
@@ -24,7 +31,9 @@ export function countUp(el: HTMLElement, to: number, delayMs = 0, from = 0): JSA
     delay: delayMs,
     ease: "outExpo",
     onUpdate: () => {
-      el.textContent = fmtInt(Math.round(o.v));
+      const v = Math.round(o.v);
+      el.textContent = fmtInt(v);
+      onValue?.(v);
     },
   });
 }
