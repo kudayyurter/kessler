@@ -35,7 +35,11 @@ export function Objects({
    * GlobeScene, which fans these into a `labelSources` ref by group index. */
   onLabelSource?: (s: LabelSource | null) => void;
 }) {
-  const { frames, requestPath } = usePropagation(records, active);
+  const { frames, requestPath, shown } = usePropagation(records, active);
+  // The records the on-screen positions belong to. During a data swap these stay the previous
+  // generation's until the new worker's first frame (see usePropagation); before the first frame
+  // they are `records` (nothing is drawn until frames arrive).
+  const view = shown ?? records;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const gl = useThree((s) => s.gl);
   const height = useThree((s) => s.size.height);
@@ -45,13 +49,13 @@ export function Objects({
   const selectedId = useExplorer((s) => s.selectedId);
 
   const visible = useMemo(
-    () => records.map((r) => isVisible(r, group, { types, owners, orbits })),
-    [records, group, types, owners, orbits],
+    () => view.map((r) => isVisible(r, group, { types, owners, orbits })),
+    [view, group, types, owners, orbits],
   );
 
   const atlas = useMemo(() => createAtlasTexture(), []);
   const material = useMemo(() => createObjectMaterial(atlas), [atlas]);
-  const geometry = useMemo(() => buildObjectGeometry(records), [records]);
+  const geometry = useMemo(() => buildObjectGeometry(view), [view]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(
     () => () => {
@@ -62,7 +66,7 @@ export function Objects({
   );
   useEffect(() => setVisibility(geometry, visible), [geometry, visible]);
 
-  const indexById = useMemo(() => new Map(records.map((r, i) => [r.noradId, i])), [records]);
+  const indexById = useMemo(() => new Map(view.map((r, i) => [r.noradId, i])), [view]);
   useEffect(() => {
     onReady?.((noradId) => {
       const i = indexById.get(noradId);
@@ -72,9 +76,9 @@ export function Objects({
   }, [indexById, frames, onReady]);
 
   useEffect(() => {
-    onLabelSource?.({ group, records, visible, frames });
+    onLabelSource?.({ group, records: view, visible, frames });
     return () => onLabelSource?.(null);
-  }, [group, records, visible, frames, onLabelSource]);
+  }, [group, view, visible, frames, onLabelSource]);
 
   const points = useRef<THREE.Points>(null);
   const uploaded = useRef<{ geometry: THREE.BufferGeometry | null; next: Float32Array | null }>({ geometry: null, next: null });
@@ -96,7 +100,7 @@ export function Objects({
     <>
       <points ref={points} geometry={geometry} material={material} frustumCulled={false} visible={false} />
       {selectedIndex !== undefined && (
-        <Selection record={records[selectedIndex]} index={selectedIndex} frames={frames} requestPath={requestPath} atlas={atlas} />
+        <Selection record={view[selectedIndex]} index={selectedIndex} frames={frames} requestPath={requestPath} atlas={atlas} />
       )}
     </>
   );
