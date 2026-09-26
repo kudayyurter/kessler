@@ -102,6 +102,10 @@ export function createGlobeData(deps: GlobeDataDeps) {
     const e = ++epoch;
     store.setState(initial());
     for (const g of requested) setGroup(g, { status: "loading" });
+    // Snapshotted before awaiting the pointer: a concurrent want() adds to `requested` and loads
+    // its own group once the pointer resolves — re-reading `requested` after the await would load
+    // that group a second time.
+    const groups = [...requested];
     pointerReady = (async () => {
       const pointer = await deps.current().catch(() => null);
       if (e !== epoch) return;
@@ -110,7 +114,7 @@ export function createGlobeData(deps: GlobeDataDeps) {
     })();
     await pointerReady;
     if (e !== epoch) return;
-    await Promise.all([...requested].map((g) => loadGroup(g, e)));
+    await Promise.all(groups.map((g) => loadGroup(g, e)));
   }
 
   /** Asks for a group (HIGH when the Higher orbits filter is first turned on). */
@@ -147,6 +151,10 @@ export function createGlobeData(deps: GlobeDataDeps) {
         const groups = [...requested];
         const loaded = await Promise.all(groups.map((g) => fetchGroup(g, pointer.generation)));
         if (e !== epoch || loaded.some((l) => l === null)) return;
+        // A group was requested mid-download and is not covered by this download: swapping now
+        // would either strand it in `loading` (if its own load finishes after this swap) or show
+        // it against a stale generation (if it finishes first). Skip; the next check covers it.
+        if ([...requested].some((g) => !groups.includes(g))) return;
         const got = loaded as Loaded[];
         deps.setNamesGeneration(pointer.generation);
         store.setState((cur) => {

@@ -27,8 +27,9 @@ function fakeApi() {
       const key = `${group}@${generation ?? "-"}`;
       calls.push(key);
       if (gate) await gate;
+      if (keyGates.has(key)) await keyGates.get(key);
       if (fail.has(group) || fail.has(key)) throw new Error("HTTP 503");
-      if (missing.has(group)) return null;
+      if (missing.has(group) || missing.has(key)) return null;
       const gen = serveAs.get(key) ?? generation ?? latest();
       return new TextEncoder().encode(`${gen}|${group}`);
     },
@@ -39,6 +40,7 @@ function fakeApi() {
     },
     setNamesGeneration: (g) => names.push(g),
   };
+  const keyGates = new Map<string, Promise<void>>();
   return {
     deps, calls, names, fail, missing, serveAs,
     setPointer: (p: string | null | Error) => { pointer = p; },
@@ -46,6 +48,13 @@ function fakeApi() {
       let release!: () => void;
       gate = new Promise((r) => { release = r; });
       return () => { gate = null; release(); };
+    },
+    // Gates one specific "group@generation" request only, independent of the others — for races
+    // between two in-flight requests that must resolve in either order.
+    holdKey: (key: string) => {
+      let release!: () => void;
+      keyGates.set(key, new Promise((r) => { release = r; }));
+      return () => { keyGates.delete(key); release(); };
     },
   };
 }
@@ -107,6 +116,14 @@ describe("createGlobeData", () => {
     await Promise.all([ctl.want("HIGH"), ctl.want("HIGH")]);
     expect(ctl.store.getState().groups.HIGH).toEqual({ status: "ready", records: [{ noradId: 2 }, { noradId: 10 }] });
     expect(api.calls.filter((c) => c.startsWith("HIGH"))).toEqual(["HIGH@g1"]);
+  });
+
+  it("wanting a group while start's pointer request is in flight requests it once", async () => {
+    const api = fakeApi();
+    const ctl = createGlobeData(api.deps);
+    await Promise.all([ctl.start(), ctl.want("HIGH")]);
+    expect(api.calls.filter((c) => c.startsWith("HIGH"))).toEqual(["HIGH@g1"]);
+    expect(ctl.store.getState().groups.HIGH.status).toBe("ready");
   });
 
   it("retries a failed group", async () => {
@@ -200,6 +217,43 @@ describe("createGlobeData", () => {
     expect(s.version).toBe(1);
   });
 
+  it("check: a group asked for during a background download is not left behind", async () => {
+    for (const order of ["leo-first", "high-first"] as const) {
+      const api = fakeApi();
+      const ctl = createGlobeData(api.deps);
+      await ctl.start(); // requested = {LEO}, LEO ready on g1
+      api.setPointer("g2");
+      const releaseLeo = api.holdKey("LEO@g2");
+      const releaseHigh = api.holdKey("HIGH@g1");
+      const checkPromise = ctl.check(); // reads pointer g2, starts downloading LEO@g2 only
+      await settle();
+      const wantPromise = ctl.want("HIGH"); // turned on mid-download: loads HIGH from the shown gen, g1
+      await settle();
+      if (order === "leo-first") {
+        releaseLeo();
+        await settle();
+        releaseHigh();
+      } else {
+        releaseHigh();
+        await settle();
+        releaseLeo();
+      }
+      await Promise.all([checkPromise, wantPromise]);
+      let s = ctl.store.getState();
+      expect(s.generation).toBe("g1");
+      expect(s.version).toBe(0);
+      expect(s.groups.HIGH.status).toBe("ready");
+      expect(ids(s.groups.HIGH.records)).toEqual([2, 10]);
+      // The next check sees both groups requested and swaps them in together.
+      await ctl.check();
+      s = ctl.store.getState();
+      expect(s.generation).toBe("g2");
+      expect(s.version).toBe(1);
+      expect(ids(s.groups.LEO.records)).toEqual([1, 20]);
+      expect(ids(s.groups.HIGH.records)).toEqual([2, 20]);
+    }
+  });
+
   it("check: a failed pointer request changes nothing", async () => {
     const api = fakeApi();
     const ctl = createGlobeData(api.deps);
@@ -207,6 +261,33 @@ describe("createGlobeData", () => {
     api.setPointer(new Error("HTTP 500"));
     await ctl.check();
     expect(ctl.store.getState().generation).toBe("g1");
+  });
+
+  it("check: a null pointer (no generation published yet) changes nothing", async () => {
+    const api = fakeApi();
+    const ctl = createGlobeData(api.deps);
+    await ctl.start();
+    api.setPointer(null);
+    await ctl.check();
+    const s = ctl.store.getState();
+    expect(s.generation).toBe("g1");
+    expect(s.version).toBe(0);
+  });
+
+  it("check: a partial 404 during a background download keeps what is shown", async () => {
+    const api = fakeApi();
+    const ctl = createGlobeData(api.deps);
+    await ctl.start();
+    await ctl.want("HIGH");
+    api.setPointer("g2");
+    api.missing.add("HIGH@g2");
+    await ctl.check();
+    const s = ctl.store.getState();
+    expect(s.generation).toBe("g1");
+    expect(s.version).toBe(0);
+    expect(ids(s.groups.LEO.records)).toEqual([1, 10]);
+    expect(s.groups.HIGH.status).toBe("ready");
+    expect(ids(s.groups.HIGH.records)).toEqual([2, 10]);
   });
 
   it("runs one check at a time", async () => {
@@ -267,9 +348,13 @@ describe("createGlobeData", () => {
     await settle();
     ctl.dispose();
     release();
+    const before = api.calls.length;
     await ctl.start();
     await ctl.want("HIGH"); // the remounted effect asks again: already requested
     await settle();
+    const since = api.calls.slice(before);
+    expect(since.filter((c) => c === "LEO@g1")).toHaveLength(1);
+    expect(since.filter((c) => c === "HIGH@g1")).toHaveLength(1);
     const s = ctl.store.getState();
     expect(s.groups.LEO.status).toBe("ready");
     expect(s.groups.HIGH.status).toBe("ready");
