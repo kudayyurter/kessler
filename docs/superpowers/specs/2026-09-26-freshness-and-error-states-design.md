@@ -44,7 +44,9 @@ One hook owns globe data and replaces `GlobeSection`'s fetch effects.
   wanted (LEO; HIGH if enabled) are downloaded for the new generation in the background. Only when all of them
   have arrived: records, generation, publish time and the name cache switch together, and the data version
   increments. A failed or partial background download changes nothing on screen; the next check retries. At most
-  one check runs at a time.
+  one check runs at a time. In the shipped implementation "currently wanted" is really "ever requested": once HIGH
+  has been asked for it keeps being refreshed even after the Higher orbits filter is turned off, which is why both
+  groups stay on one generation and turning HIGH back on is instant.
 - **Retry:** re-requests one failed group from the shown generation (LEO failed on first load: re-run the whole
   first load).
 - **Consumers of the data version:** the page's `meta`, timeseries and breakdown requests re-run when it changes
