@@ -136,7 +136,17 @@ export function LabelDriver({
     const cam: [number, number, number] = [camera.position.x, camera.position.y, camera.position.z];
     const t = simClock.now();
     const p = scratch.current;
+    const current = sources.current;
     for (const s of shown.current.values()) {
+      if (!current?.includes(s.src)) {
+        // A swap published a new LabelSource for this object's group since the last reselect:
+        // `s.i` is an index into the old records/frames generation and no longer lines up with
+        // the new one. Hide until the next reselect repicks it, and don't wait out the rest of
+        // the 250ms cadence to do that.
+        if (s.el.style.display !== "none") s.el.style.display = "none";
+        last.current = 0;
+        continue;
+      }
       let visible = interpolate(s.src.frames.current, t, s.i, p);
       if (visible) {
         const pos: [number, number, number] = [p.x, p.y, p.z];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { earthRadiusPx } from "@/lib/camera";
 import { simClock } from "@/lib/clock";
@@ -64,10 +64,16 @@ export function Objects({
     },
     [material, atlas],
   );
-  useEffect(() => setVisibility(geometry, visible), [geometry, visible]);
+  // Layout effects (not passive): they must commit in the same pass as the frames swap in
+  // usePropagation's own useLayoutEffect (which — because usePropagation is called above, earlier
+  // in this component's hook list — always runs first in the same commit). A passive effect here
+  // could be deferred past the next paint/rAF, letting R3F draw the new geometry (all points
+  // hidden, per buildObjectGeometry's zeroed aVisible) or hand Picker/LabelDriver the old records
+  // against the already-swapped frames for one frame.
+  useLayoutEffect(() => setVisibility(geometry, visible), [geometry, visible]);
 
   const indexById = useMemo(() => new Map(view.map((r, i) => [r.noradId, i])), [view]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     onReady?.((noradId) => {
       const i = indexById.get(noradId);
       const v = new THREE.Vector3();
@@ -75,7 +81,7 @@ export function Objects({
     });
   }, [indexById, frames, onReady]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onLabelSource?.({ group, records: view, visible, frames });
     return () => onLabelSource?.(null);
   }, [group, view, visible, frames, onLabelSource]);

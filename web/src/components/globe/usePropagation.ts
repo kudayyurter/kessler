@@ -47,6 +47,11 @@ export function usePropagation(
     let waiting = false;
     let promoted = false;
     let retired = false;
+    // This worker's own frames object — written in place on every tick, staged, then (at
+    // promotion) assigned as `frames.current` itself. Writes never touch the shared `frames` ref
+    // directly, so a worker that's staged-but-not-yet-shown, or superseded after promotion, can
+    // never clobber whichever generation is actually live (see Staged.frames below).
+    const own: Frames = emptyFrames();
     const pendingPaths = new Map<number, (p: Float32Array | null) => void>();
     let pathId = 0;
     const request = () => {
@@ -83,24 +88,22 @@ export function usePropagation(
       }
       waiting = false;
       if (!promoted) {
-        // First frame for these records: stage them to take over (see the layout effect below).
+        // First frame for these records: seed both slots (own.prev === own.next, so there's
+        // nothing to interpolate from yet) and stage to take over (see the layout effect below).
         promoted = true;
+        own.prev = msg.positions;
+        own.next = msg.positions;
+        own.prevTime = msg.timeMs;
+        own.nextTime = msg.timeMs;
         staged.current?.retire();
-        staged.current = {
-          records,
-          frames: { prev: msg.positions, next: msg.positions, prevTime: msg.timeMs, nextTime: msg.timeMs },
-          request,
-          path,
-          retire,
-        };
+        staged.current = { records, frames: own, request, path, retire };
         setShown({ records });
         return;
       }
-      const f = frames.current;
-      f.prev = f.next;
-      f.prevTime = f.nextTime;
-      f.next = msg.positions;
-      f.nextTime = msg.timeMs;
+      own.prev = own.next;
+      own.prevTime = own.nextTime;
+      own.next = msg.positions;
+      own.nextTime = msg.timeMs;
     };
     const load: WorkerIn = { kind: "load", records };
     worker.postMessage(load);
