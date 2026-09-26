@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
 import { simClock } from "@/lib/clock";
-import { behindEarth, isOccluded, LABEL_INTERVAL_MS, labelAnchor, labelsActive, pickLabels, type Candidate, type VisibleRect } from "@/lib/labels";
+import { behindEarth, isOccluded, LABEL_INTERVAL_MS, labelAnchor, labelsActive, pickLabels, sourceFor, type Candidate, type VisibleRect } from "@/lib/labels";
 import { nameCache } from "@/lib/names";
 import { useExplorer } from "@/lib/store";
 import { GLOBE_COLORS } from "@/lib/types";
@@ -138,7 +138,12 @@ export function LabelDriver({
     const p = scratch.current;
     const current = sources.current;
     for (const s of shown.current.values()) {
-      if (!current?.includes(s.src)) {
+      // Objects publishes a new LabelSource object whenever `visible` changes (e.g. a filter
+      // toggle) even though `records` is unchanged; matching by `records` identity rather than by
+      // the exact source object tells that apart from a swap, so a filter change doesn't blink
+      // the label for one frame.
+      const match = sourceFor(current, s.src.records);
+      if (!match) {
         // A swap published a new LabelSource for this object's group since the last reselect:
         // `s.i` is an index into the old records/frames generation and no longer lines up with
         // the new one. Hide until the next reselect repicks it, and don't wait out the rest of
@@ -147,6 +152,7 @@ export function LabelDriver({
         last.current = 0;
         continue;
       }
+      if (match !== s.src) s.src = match; // only `visible` changed: same records/index, keep showing it
       let visible = interpolate(s.src.frames.current, t, s.i, p);
       if (visible) {
         const pos: [number, number, number] = [p.x, p.y, p.z];

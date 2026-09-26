@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { behindEarth, HIDE_ABOVE, isOccluded, LABEL_MAX, labelAnchor, labelsActive, pickLabels, SHOW_BELOW, type Candidate } from "@/lib/labels";
+import { behindEarth, HIDE_ABOVE, isOccluded, LABEL_MAX, labelAnchor, labelsActive, pickLabels, SHOW_BELOW, sourceFor, type Candidate } from "@/lib/labels";
 
 const W = 1000, H = 800;
 const c = (id: number, x: number, y: number, extra: Partial<Candidate> = {}): Candidate => ({ id, x, y, name: `SAT ${id}`, color: "#fff", occluded: false, ...extra });
@@ -125,5 +125,25 @@ describe("pickLabels pill must fit the visible rect", () => {
 describe("labelAnchor", () => {
   it("offsets the pill 8px up-right of the object", () => {
     expect(labelAnchor(100, 200)).toEqual({ left: 108, top: 200 - 8 - 18 });
+  });
+});
+
+describe("sourceFor", () => {
+  // LabelDriver's flicker fix: Objects publishes a new LabelSource object whenever `visible`
+  // changes (a filter toggle), even though `records` is the same array. Only a different
+  // `records` identity (a swap) should count as stale.
+  it("finds the current source with the same records identity, even as a different object", () => {
+    const records = ["a"];
+    const current = [{ records, visible: [true] }, undefined];
+    expect(sourceFor(current, records)).toBe(current[0]);
+  });
+
+  it("returns undefined when no current source shares the records identity (a swap)", () => {
+    const current = [{ records: ["b"], visible: [true] }];
+    expect(sourceFor(current, ["a"])).toBeUndefined();
+  });
+
+  it("returns undefined for an undefined sources list", () => {
+    expect(sourceFor(undefined, ["a"])).toBeUndefined();
   });
 });

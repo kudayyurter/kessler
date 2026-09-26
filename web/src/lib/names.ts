@@ -14,14 +14,21 @@ export function createNameCache(
   });
   let generation: string | undefined;
   let entries = fresh();
+  // The generation being switched away from, kept only until each group's new-generation map
+  // loads. Without it, LabelDriver's next reselect finds peek() null the instant the generation
+  // switches and drops every label until the new names file arrives — names are keyed by NORAD
+  // ID, so the old map still reads right for objects present in both generations.
+  let fallback: Record<Group, Entry> | null = null;
   return {
-    /** Names belong to one snapshot generation: switching drops the previous generation's. */
+    /** Names belong to one snapshot generation: switching keeps the previous one as a fallback
+     * (see `fallback` above) until each group's own map for the new generation has loaded. */
     useGeneration(next: string | undefined) {
       if (next === generation) return;
       generation = next;
+      fallback = entries;
       entries = fresh();
     },
-    peek: (g: Group) => entries[g].map,
+    peek: (g: Group) => entries[g].map ?? fallback?.[g].map ?? null,
     get(g: Group): Promise<Map<number, string> | null> {
       const e = entries[g];
       if (e.map) return Promise.resolve(e.map);

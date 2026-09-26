@@ -48,6 +48,15 @@ export function behindEarth(cam: V3, p: V3): boolean {
   return perp[0] * perp[0] + perp[1] * perp[1] + perp[2] * perp[2] < 1;
 }
 
+/** The current-frame source (if any) whose `records` array is the same object as `records` —
+ * i.e. still the same generation, even if it's a different LabelSource object (Objects publishes
+ * a new one whenever `visible` changes, e.g. a filter toggle). LabelDriver adopts this source
+ * instead of treating the entry as stale, so a filter change doesn't blink the label for one
+ * frame; a genuinely different `records` (a swap) correctly finds nothing here. */
+export function sourceFor<T extends { records: R }, R>(current: readonly (T | undefined)[] | undefined, records: R): T | undefined {
+  return current?.find((s) => s !== undefined && s.records === records);
+}
+
 export type Candidate = { id: number; x: number; y: number; name: string; color: string; occluded: boolean };
 export type Placed = Candidate & { left: number; top: number };
 /** Screen region (CSS px) where labels may appear: the part of the globe not covered by UI —
