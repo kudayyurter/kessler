@@ -441,3 +441,27 @@ test("a newly published generation replaces the orbits without a reload and keep
   await expect(page.getByTestId("object-card")).toBeVisible();
   await expect(page.getByTestId("live-badge")).toContainText("LIVE");
 });
+
+test("search says when nothing matches, and offers Retry when it fails", async ({ page }) => {
+  await mockApi(page);
+  let mode: "empty" | "fail" | "ok" = "empty";
+  await page.route("**/api/objects/search**", (route) =>
+    mode === "empty"
+      ? route.fulfill({ status: 200, body: "[]", contentType: "application/json" })
+      : mode === "fail"
+        ? route.fulfill({ status: 500, body: JSON.stringify({ error: { code: "internal", message: "x" } }), contentType: "application/json" })
+        : route.fallback(),
+  );
+  await page.goto("/");
+  const box = page.getByLabel("Find an object");
+  await box.fill("zzzz");
+  await expect(page.getByText("No matches for “zzzz”.")).toBeVisible();
+  await expect(page.getByText("Try a name (ISS), a NORAD number (25544) or a COSPAR ID (1998-067A).")).toBeVisible();
+  mode = "fail";
+  await box.fill("iss");
+  await expect(page.getByText("Search is unavailable right now.")).toBeVisible();
+  mode = "ok";
+  await page.locator('[data-panel="search"]').getByRole("button", { name: "Retry" }).click();
+  await expect(page.getByRole("button", { name: /ISS \(ZARYA\)/ })).toBeVisible();
+  await expect(page.getByText("1 match")).toBeVisible();
+});

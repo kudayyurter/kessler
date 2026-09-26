@@ -2,43 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { isSearchable, searchStatus, searchView, type SearchAnswer } from "@/lib/searchState";
 import { useExplorer } from "@/lib/store";
-import { TYPE_LABELS, type SearchResult } from "@/lib/types";
+import { TYPE_LABELS } from "@/lib/types";
 
 export function SearchBox() {
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  // Bumped by Retry: re-runs the same query, and hides the failed answer until the new one arrives.
+  const [attempt, setAttempt] = useState(0);
+  const [answer, setAnswer] = useState<SearchAnswer | null>(null);
   const select = useExplorer((s) => s.select);
+  const text = q.trim();
 
   useEffect(() => {
-    const text = q.trim();
-    if (text.length < 2 && !/^\d+$/.test(text)) {
-      // Clear stale results/errors when the query is too short to search — this mirrors an
-      // external fetch keyed by `q` (below), which react-hooks/set-state-in-effect doesn't
-      // distinguish from an avoidable derived-state effect; see the identical justification on
-      // GlobeSection's WebGL probe and ObjectCard's selection reset.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults([]);
-      setError(null);
-      return;
-    }
-    // `cancelled` guards against the fetch itself arriving out of order (the debounce timeout
-    // below only protects against a *pending* timer being superseded — once it fires and the
-    // fetch is in flight, a fast response to a later query could otherwise be overwritten by a
-    // slow response to an earlier one).
+    if (!isSearchable(text)) return;
+    // `cancelled` guards against responses arriving out of order (the debounce only protects
+    // against a pending timer being superseded); the view also shows an answer only for the
+    // query and attempt it belongs to (see searchView).
     let cancelled = false;
     const id = window.setTimeout(() => {
       api.search(text)
-        .then((r) => { if (!cancelled) { setResults(r); setError(null); } })
-        .catch((e: Error) => { if (!cancelled) { setResults([]); setError(e.message); } });
+        .then((results) => { if (!cancelled) setAnswer({ query: text, attempt, results }); })
+        .catch(() => { if (!cancelled) setAnswer({ query: text, attempt, results: null }); });
     }, 250);
     return () => {
       cancelled = true;
       window.clearTimeout(id);
     };
-  }, [q]);
+  }, [text, attempt]);
 
+  const view = searchView(q, attempt, answer);
+  const status = searchStatus(view);
   return (
     <div>
       <label className="label" htmlFor="search">Find an object</label>
@@ -50,10 +44,33 @@ export function SearchBox() {
         maxLength={100}
         className="mt-2 w-full rounded-[10px] border-2 border-line bg-[#121212] px-3 py-2 text-[13px] text-ink placeholder:text-ink-3"
       />
-      {error && <p className="mt-2 text-[13px] text-ink-2">{error}</p>}
-      {results.length > 0 && (
+      <div className={`${status ? "mt-2 " : ""}flex flex-wrap items-baseline gap-x-2`}>
+        <p role="status" className="text-[13px] text-ink-3">
+          {status && (
+            <>
+              <span className={view.kind === "results" && view.results.length === 0 ? "text-ink-2" : undefined}>{status.text}</span>
+              {status.hint && (
+                <>
+                  <br />
+                  {status.hint}
+                </>
+              )}
+            </>
+          )}
+        </p>
+        {view.kind === "error" && (
+          <button
+            type="button"
+            onClick={() => setAttempt((a) => a + 1)}
+            className="rounded-full border-2 border-line bg-[#1a1a1a] px-2 text-[11px] text-ink hover:bg-[#222]"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+      {view.kind === "results" && view.results.length > 0 && (
         <ul className="mt-2 max-h-56 overflow-auto rounded-[10px] border-2 border-line">
-          {results.map((r) => (
+          {view.results.map((r) => (
             <li key={r.norad_id}>
               <button type="button" onClick={() => { select(r.norad_id); setQ(""); }} className="flex w-full justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-[#161616]">
                 <span className="text-ink">{r.name}</span>
