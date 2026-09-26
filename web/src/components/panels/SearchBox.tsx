@@ -62,7 +62,8 @@ export function SearchBox() {
           <button
             type="button"
             onClick={() => setAttempt((a) => a + 1)}
-            className="rounded-full border-2 border-line bg-[#1a1a1a] px-2 text-[11px] text-ink hover:bg-[#222]"
+            aria-label="Retry search"
+            className="min-h-6 rounded-full border-2 border-line bg-[#1a1a1a] px-2 text-[11px] text-ink hover:bg-[#222]"
           >
             Retry
           </button>

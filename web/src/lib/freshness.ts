@@ -50,10 +50,10 @@ export function deriveStatus(input: PillInput, now: number): PillStatus {
   const failed = having((s) => s === "error");
   const loading = having((s) => s === "loading" || s === "idle");
   const missing = having((s) => s === "missing");
-  const title =
-    input.generatedAt === null
-      ? null
-      : `Elements published ${new Date(input.generatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  // A bad header (NaN, ±Infinity) is treated the same as "unknown" — `new Date(...).toISOString()`
+  // throws RangeError on a non-finite value, and this pill sits outside GlobeErrorBoundary.
+  const generatedAt = input.generatedAt !== null && Number.isFinite(input.generatedAt) ? input.generatedAt : null;
+  const title = generatedAt === null ? null : `Elements published ${new Date(generatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC`;
   const base = { note: null, age: null, retry: [] as PillGroup[], title };
 
   if (ready.length === 0) {
@@ -62,11 +62,16 @@ export function deriveStatus(input: PillInput, now: number): PillStatus {
     return { ...base, tone: "grey", word: "NO DATA YET" };
   }
 
-  const stale = input.generatedAt !== null && now - input.generatedAt > STALE_AFTER_MS;
+  const stale = generatedAt !== null && now - generatedAt > STALE_AFTER_MS;
   const word = stale ? "DELAYED" : "LIVE";
   if (failed.length > 0) return { ...base, tone: "amber", word, note: `${names(failed)} failed`, retry: failed };
   if (missing.length > 0) return { ...base, tone: "amber", word, note: `${names(missing)} not available` };
   const tone: Tone = stale ? "amber" : "green";
   if (loading.length > 0) return { ...base, tone, word, note: `loading ${names(loading)}…` };
-  return { ...base, tone, word, age: input.generatedAt === null ? null : formatAge(now - input.generatedAt) };
+  return { ...base, tone, word, age: generatedAt === null ? null : formatAge(now - generatedAt) };
+}
+
+/** The Retry button's accessible name: which group(s) it reloads. */
+export function retryLabel(groups: PillGroup[]): string {
+  return groups.length === 2 ? "Retry orbits" : `Retry ${LABEL[groups[0]]}`;
 }

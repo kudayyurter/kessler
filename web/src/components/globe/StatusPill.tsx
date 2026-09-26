@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { deriveStatus, TONE_COLOR, type PillGroup, type PillInput } from "@/lib/freshness";
+import { deriveStatus, retryLabel, TONE_COLOR, type PillGroup, type PillInput } from "@/lib/freshness";
 
 /** Wall-clock time, refreshed every `everyMs` (the pill's age only changes by the minute). Same
  * effect pattern as GlobeSection's Readout, which eslint's set-state-in-effect rule accepts. */
@@ -45,7 +45,8 @@ export function StatusPill({ input, onRetry }: { input: PillInput; onRetry: (g: 
         <button
           type="button"
           onClick={() => s.retry.forEach(onRetry)}
-          className="whitespace-nowrap rounded-full border-2 border-line bg-[#1a1a1a] px-2 text-[11px] text-ink hover:bg-[#222]"
+          aria-label={retryLabel(s.retry)}
+          className="min-h-6 whitespace-nowrap rounded-full border-2 border-line bg-[#1a1a1a] px-2 text-[11px] text-ink hover:bg-[#222]"
         >
           Retry
         </button>

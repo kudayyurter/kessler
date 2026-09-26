@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveStatus, formatAge, STALE_AFTER_MS, type PillGroup, type PillGroupStatus, type PillInput } from "@/lib/freshness";
+import { deriveStatus, formatAge, retryLabel, STALE_AFTER_MS, type PillGroup, type PillGroupStatus, type PillInput } from "@/lib/freshness";
 
 const MIN = 60_000;
 const H = 60 * MIN;
@@ -100,5 +100,25 @@ describe("deriveStatus", () => {
 
   it("a publish time in the future reads just now", () => {
     expect(deriveStatus(input("ready", "idle"), T0 - 5 * MIN).age).toBe("just now");
+  });
+
+  // `new Date(NaN).toISOString()` throws RangeError, and StatusPill sits outside GlobeErrorBoundary
+  // — a non-finite generatedAt (a bad header) must never reach that call.
+  it("treats a non-finite generatedAt as unknown: no title, no age, never DELAYED", () => {
+    expect(deriveStatus(input("ready", "idle", ["LEO"], NaN), T0)).toMatchObject({
+      tone: "green", word: "LIVE", age: null, title: null,
+    });
+    expect(deriveStatus(input("ready", "idle", ["LEO"], Infinity), T0)).toMatchObject({ word: "LIVE", title: null });
+  });
+});
+
+describe("retryLabel", () => {
+  it("names the one failed group", () => {
+    expect(retryLabel(["LEO"])).toBe("Retry low orbits");
+    expect(retryLabel(["HIGH"])).toBe("Retry higher orbits");
+  });
+
+  it("says orbits, not both names, when both failed", () => {
+    expect(retryLabel(["LEO", "HIGH"])).toBe("Retry orbits");
   });
 });
