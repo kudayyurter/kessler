@@ -44,7 +44,11 @@ function trackErrors(page: Page): string[] {
 }
 
 // The snapshot fixture's header says it was published 2026-09-23T12:00:00Z. Tests that read the
-// status pill fix the page clock relative to that, so the age is deterministic.
+// status pill fix the page clock relative to that, so the age is deterministic. Note: page.clock
+// (any of its methods) replaces requestAnimationFrame globally with a fake, timer-queue-driven
+// version that nothing here drives forward — a test that fixes the clock must not also depend on
+// an rAF-driven animation (e.g. the Overview panel's count-up tween restarting after a remount),
+// or that animation will hang forever instead of completing.
 const FIXTURE_PUBLISHED = Date.parse("2026-09-23T12:00:00Z");
 const hoursAfterFixture = (h: number) => new Date(FIXTURE_PUBLISHED + h * 3_600_000);
 
@@ -136,7 +140,6 @@ test("falls back to the un-versioned snapshot when the pointer fetch fails", asy
 });
 
 test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) => {
-  await page.clock.setFixedTime(hoursAfterFixture(2));
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await page.goto("/");
