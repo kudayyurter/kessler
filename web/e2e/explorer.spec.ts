@@ -44,11 +44,13 @@ function trackErrors(page: Page): string[] {
 }
 
 // The snapshot fixture's header says it was published 2026-09-23T12:00:00Z. Tests that read the
-// status pill fix the page clock relative to that, so the age is deterministic. Note: page.clock
-// (any of its methods) replaces requestAnimationFrame globally with a fake, timer-queue-driven
-// version that nothing here drives forward — a test that fixes the clock must not also depend on
-// an rAF-driven animation (e.g. the Overview panel's count-up tween restarting after a remount),
-// or that animation will hang forever instead of completing.
+// status pill set the page's system clock relative to that, so the age is deterministic — via
+// setSystemTime, not setFixedTime. anime.js (the tile count-up and chart draw-in animations) times
+// every tween with Date.now() (not requestAnimationFrame timestamps — see node_modules/animejs's
+// engine, which uses Date.now for Node compatibility); setFixedTime freezes Date.now, which
+// freezes every one of those tweens mid-flight (tiles stuck at "0", chart lines never drawn) since
+// nothing then advances it for them to measure elapsed time against. setSystemTime only sets the
+// starting point and lets time continue to advance normally, so animations still complete.
 const FIXTURE_PUBLISHED = Date.parse("2026-09-23T12:00:00Z");
 const hoursAfterFixture = (h: number) => new Date(FIXTURE_PUBLISHED + h * 3_600_000);
 
@@ -140,6 +142,7 @@ test("falls back to the un-versioned snapshot when the pointer fetch fails", asy
 });
 
 test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) => {
+  await page.clock.setSystemTime(hoursAfterFixture(2));
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await page.goto("/");
@@ -147,17 +150,17 @@ test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) =
   const sheet = page.getByTestId("mobile-sheet");
   await expect(sheet).toBeVisible();
   await expect(page.getByTestId("panel-dock")).toHaveCount(0);
-  // The LIVE badge moved to a top bar on phone (see GlobeSection) so the open sheet, which
+  // The status pill moved to a top bar on phone (see GlobeSection) so the open sheet, which
   // covers roughly the lower half of the screen, never covers it.
   const badge = page.getByTestId("live-badge");
   await expect(badge).toBeVisible();
   const badgeBox = await badge.boundingBox();
   const sheetBox = await sheet.boundingBox();
-  if (!badgeBox || !sheetBox) throw new Error("missing bounding box for the LIVE badge or sheet");
+  if (!badgeBox || !sheetBox) throw new Error("missing bounding box for the status pill or sheet");
   const overlap = badgeBox.x < sheetBox.x + sheetBox.width && sheetBox.x < badgeBox.x + badgeBox.width
     && badgeBox.y < sheetBox.y + sheetBox.height && sheetBox.y < badgeBox.y + badgeBox.height;
-  expect(overlap, "LIVE badge must not overlap the sheet").toBe(false);
-  expect(badgeBox.y + badgeBox.height, "LIVE badge should sit in the top 20% of the screen").toBeLessThanOrEqual(844 * 0.2);
+  expect(overlap, "status pill must not overlap the sheet").toBe(false);
+  expect(badgeBox.y + badgeBox.height, "status pill should sit in the top 20% of the screen").toBeLessThanOrEqual(844 * 0.2);
   // The date/sun readout lives in the same top bar, on one line, without overlapping the Earth.
   const readout = page.getByTestId("globe-readout");
   await expect(readout).toBeVisible();
@@ -303,11 +306,11 @@ test("panels do not overlap at 1280x720", async ({ page }) => {
     }
 });
 
-// Every viewport: nothing overlaps (panels, dock, sheet, control bar) and the LIVE badge is
-// really visible — the element at its centre is the badge itself, not something covering it.
+// Every viewport: nothing overlaps (panels, dock, sheet, control bar) and the status pill is
+// really visible — the element at its centre is the pill itself, not something covering it.
 for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 720]] as const) {
-  test(`${w}x${h}: no overlap and LIVE badge visible`, async ({ page }) => {
-    await page.clock.setFixedTime(hoursAfterFixture(2));
+  test(`${w}x${h}: no overlap and status pill visible`, async ({ page }) => {
+    await page.clock.setSystemTime(hoursAfterFixture(2));
     await page.setViewportSize({ width: w, height: h });
     await mockApi(page);
     await page.goto("/");
@@ -348,11 +351,17 @@ for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 7
       [bb.x + bb.width / 2, bb.y + bb.height / 2],
     );
     expect(inside, "the element at the status pill's centre belongs to the pill").toBe(true);
+    // The spec drops the word "updated" on phones (the top-bar/sheet layout) to keep the pill
+    // short; desktop's bottom-centre pill has room to keep it. The word is CSS-hidden
+    // (display:none), not removed from the DOM, so it must be read with innerText() (rendering-
+    // aware) rather than toContainText()/textContent (which walks hidden nodes too).
+    const pillHasUpdated = await badge.innerText().then((t) => t.includes("updated"));
+    expect(pillHasUpdated, `"updated" should ${sheetLayout ? "not " : ""}be visible in the ${sheetLayout ? "sheet" : "wide"} layout`).toBe(!sheetLayout);
   });
 }
 
 test("the status pill says LIVE with the data age, and the exact time on hover", async ({ page }) => {
-  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await page.clock.setSystemTime(hoursAfterFixture(2));
   await mockApi(page);
   await page.goto("/");
   const pill = page.getByTestId("live-badge");
@@ -362,7 +371,7 @@ test("the status pill says LIVE with the data age, and the exact time on hover",
 });
 
 test("the status pill says DELAYED when the data is over 12 hours old", async ({ page }) => {
-  await page.clock.setFixedTime(hoursAfterFixture(14));
+  await page.clock.setSystemTime(hoursAfterFixture(14));
   await mockApi(page);
   await page.goto("/");
   const pill = page.getByTestId("live-badge");
@@ -371,7 +380,7 @@ test("the status pill says DELAYED when the data is over 12 hours old", async ({
 });
 
 test("a failed higher-orbits load is named in the pill and Retry recovers it", async ({ page }) => {
-  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await page.clock.setSystemTime(hoursAfterFixture(2));
   await mockApi(page);
   let highFails = true;
   await page.route("**/api/globe/snapshot**", async (route) => {
@@ -394,7 +403,7 @@ test("a failed higher-orbits load is named in the pill and Retry recovers it", a
 });
 
 test("a newly published generation replaces the orbits without a reload and keeps the selection", async ({ page }) => {
-  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await page.clock.setSystemTime(hoursAfterFixture(2));
   await mockApi(page);
   let generation = "20260924T004100Z-r42";
   await page.route("**/api/globe/current", (route) =>
@@ -406,21 +415,29 @@ test("a newly published generation replaces the orbits without a reload and keep
   );
   const snapshotGenerations: (string | null)[] = [];
   let metaRequests = 0;
+  let timeseriesRequests = 0;
   page.on("request", (r) => {
     const u = new URL(r.url());
     if (u.pathname === "/api/globe/snapshot") snapshotGenerations.push(u.searchParams.get("gen"));
     if (u.pathname === "/api/meta") metaRequests++;
+    if (u.pathname === "/api/stats/timeseries") timeseriesRequests++;
   });
   await page.goto("/");
   await page.getByLabel("Find an object").fill("ISS");
   await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
   await expect(page.getByTestId("object-card")).toBeVisible();
+  // check() does nothing while a group is still loading; without waiting for the first load to
+  // finish (the pill showing an age, not just "LIVE"), the visibilitychange below can race the
+  // in-flight first load and fire a check() that no-ops, leaving nothing to poll for.
+  await expect(page.getByTestId("live-badge")).toContainText("2h ago");
   const metaBefore = metaRequests;
+  const timeseriesBefore = timeseriesRequests;
   generation = "20260926T064100Z-r43";
   // A check runs whenever the tab becomes visible; the page is visible, so this triggers one.
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await expect.poll(() => snapshotGenerations).toContain("20260926T064100Z-r43");
   await expect.poll(() => metaRequests).toBeGreaterThan(metaBefore);
+  await expect.poll(() => timeseriesRequests).toBeGreaterThan(timeseriesBefore);
   await expect(page.getByTestId("object-card")).toBeVisible();
   await expect(page.getByTestId("live-badge")).toContainText("LIVE");
 });

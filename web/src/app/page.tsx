@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { keepPrevIfEqual } from "@/lib/dedupe";
 import { PANELS, type PanelId } from "@/lib/panels";
 import { regimesFor, useExplorer } from "@/lib/store";
 import { useSheetLayout } from "@/lib/useIsMobile";
@@ -43,12 +44,23 @@ export default function Explorer() {
   useEffect(() => hydratePanels(), [hydratePanels]);
 
   // Re-fetched whenever the globe swaps in a newly published generation (dataVersion); a failed
-  // refresh keeps the numbers already shown.
+  // refresh keeps the numbers already shown, and `keepPrevIfEqual` keeps the same object identity
+  // when the payload didn't actually change, so Overview's tiles don't replay their count-up.
   useEffect(() => {
+    let cancelled = false;
     api.meta()
-      .then((d) => setMeta({ data: d, error: false }))
-      .catch(() => setMeta((m) => (m.data ? m : { data: null, error: true })));
+      .then((d) => !cancelled && setMeta((m) => ({ data: keepPrevIfEqual(m.data, d), error: false })))
+      .catch(() => !cancelled && setMeta((m) => (m.data ? m : { data: null, error: true })));
+    return () => {
+      cancelled = true;
+    };
   }, [dataVersion]);
+
+  // The filter selection (owners/types/orbits) that produced the chart data currently shown —
+  // compared against on a failed refetch (see below) to tell "the same filters' data just failed
+  // to refresh" (keep what's shown) from "these filters' own request failed" (show the error).
+  const tsShownKey = useRef<string | null>(null);
+  const barsShownKey = useRef<string | null>(null);
 
   useEffect(() => {
     // Filters can change faster than the network responds (e.g. clicking two filter chips in a
@@ -56,12 +68,29 @@ export default function Explorer() {
     // stomp the chart with stale data for the wrong filters.
     let cancelled = false;
     const regimes = regimesFor(orbits);
+    const key = JSON.stringify({ owners, types, orbits });
     api.timeseries({ group_by: "type", owners, types, regimes, from: 1960 })
-      .then((d) => !cancelled && setTs({ data: d, error: false }))
-      .catch(() => !cancelled && setTs({ data: null, error: true }));
+      .then((d) => {
+        if (cancelled) return;
+        tsShownKey.current = key;
+        setTs((m) => ({ data: keepPrevIfEqual(m.data, d), error: false }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // A background refresh (dataVersion changed, filters didn't) failing keeps the chart
+        // already shown; these filters' own request failing shows the error, as before.
+        setTs((m) => (m.data && tsShownKey.current === key ? m : { data: null, error: true }));
+      });
     api.breakdown({ by: "owner", types, regimes, top: 5 })
-      .then((d) => !cancelled && setBars({ data: d, error: false }))
-      .catch(() => !cancelled && setBars({ data: null, error: true }));
+      .then((d) => {
+        if (cancelled) return;
+        barsShownKey.current = key;
+        setBars((m) => ({ data: keepPrevIfEqual(m.data, d), error: false }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBars((m) => (m.data && barsShownKey.current === key ? m : { data: null, error: true }));
+      });
     return () => {
       cancelled = true;
     };

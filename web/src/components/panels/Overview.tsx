@@ -12,9 +12,15 @@ const TYPES: ObjectType[] = ["PAY", "DEB", "R/B"];
 
 function Count({ type, value, index }: { type: ObjectType; value: number | null; index: number }) {
   const ref = useRef<HTMLSpanElement>(null);
+  // The value last shown (as opposed to `value`, which may have just changed): a later update —
+  // e.g. a background refresh triggered by dataVersion — counts up from here instead of from 0,
+  // so it doesn't visually reset the tile. Null before the first animation, so the first mount
+  // still counts up from 0.
+  const shownRef = useRef<number | null>(null);
   useEffect(() => {
     if (!ref.current || value === null) return;
-    const anim = countUp(ref.current, value, 300 + index * 120);
+    const anim = countUp(ref.current, value, 300 + index * 120, shownRef.current ?? 0);
+    shownRef.current = value;
     return () => {
       anim?.cancel();
     };

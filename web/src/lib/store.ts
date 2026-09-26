@@ -16,7 +16,7 @@ interface ExplorerState extends Filters {
   // MobileSheet via a ResizeObserver — null before the first measurement. GlobeScene uses this
   // (not a CSS-derived guess) to know exactly how much of the screen the sheet covers.
   mobileSheetTop: number | null;
-  // Bottom edge (viewport px) of the globe's top bar (readout + LIVE badge) in the bottom-sheet
+  // Bottom edge (viewport px) of the globe's top bar (readout + status pill) in the bottom-sheet
   // layout, measured by GlobeSection — with mobileSheetTop it bounds the visible globe area.
   topBarBottom: number | null;
   // Bumped by GlobeSection whenever a newly published generation is swapped in (see
