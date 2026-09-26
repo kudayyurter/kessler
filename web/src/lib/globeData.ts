@@ -76,7 +76,8 @@ export function createGlobeData(deps: GlobeDataDeps) {
     let loaded: Loaded | null;
     try {
       loaded = await fetchGroup(g, generation);
-    } catch {
+    } catch (err) {
+      console.warn(`globe data: failed to load ${g}`, err);
       if (e === epoch && store.getState().version === version) setGroup(g, { status: "error" });
       return;
     }
@@ -164,8 +165,9 @@ export function createGlobeData(deps: GlobeDataDeps) {
           });
           return { generation: pointer.generation, generatedAt: got[0].generatedAt, version: cur.version + 1, groups: next };
         });
-      } catch {
-        // Keep what is shown.
+      } catch (err) {
+        // Keep what is shown; the next check retries.
+        console.warn("globe data: check failed", err);
       }
     })();
     checking = run.finally(() => {

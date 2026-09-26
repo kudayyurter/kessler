@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHECK_EVERY_MS, createGlobeData, type GlobeDataDeps } from "@/lib/globeData";
 import type { OrbitRecord, SnapshotHeader } from "@/lib/snapshot";
 
@@ -64,11 +64,34 @@ const settle = async () => {
 };
 const ids = (records: OrbitRecord[] | null) => records?.map((r) => r.noradId) ?? null;
 
+let warnSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+});
+
 afterEach(() => {
+  warnSpy.mockRestore();
   vi.useRealTimers();
 });
 
 describe("createGlobeData", () => {
+  it("warns (with context) on a failed group load and a failed check, instead of swallowing the error", async () => {
+    const api = fakeApi();
+    api.fail.add("LEO");
+    const ctl = createGlobeData(api.deps);
+    await ctl.start();
+    expect(ctl.store.getState().groups.LEO.status).toBe("error");
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("globe data"), expect.anything());
+    warnSpy.mockClear();
+
+    api.setPointer(new Error("HTTP 500"));
+    await ctl.check();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("globe data"), expect.anything());
+  });
+});
+
+describe("createGlobeData (existing behaviour)", () => {
   it("first load: pointer, then LEO from that generation", async () => {
     const api = fakeApi();
     const ctl = createGlobeData(api.deps);
