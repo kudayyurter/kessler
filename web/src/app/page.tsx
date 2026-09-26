@@ -31,6 +31,7 @@ export default function Explorer() {
   const owners = useExplorer((s) => s.owners);
   const types = useExplorer((s) => s.types);
   const orbits = useExplorer((s) => s.orbits);
+  const dataVersion = useExplorer((s) => s.dataVersion);
   const hydratePanels = useExplorer((s) => s.hydratePanels);
   // null until hydrated: the server HTML (and the hydration pass) renders both layout shells and
   // CSS (`sheet:` / `wide:` variants) shows the right one, so first paint never flashes the wrong
@@ -41,9 +42,13 @@ export default function Explorer() {
 
   useEffect(() => hydratePanels(), [hydratePanels]);
 
+  // Re-fetched whenever the globe swaps in a newly published generation (dataVersion); a failed
+  // refresh keeps the numbers already shown.
   useEffect(() => {
-    api.meta().then((d) => setMeta({ data: d, error: false })).catch(() => setMeta({ data: null, error: true }));
-  }, []);
+    api.meta()
+      .then((d) => setMeta({ data: d, error: false }))
+      .catch(() => setMeta((m) => (m.data ? m : { data: null, error: true })));
+  }, [dataVersion]);
 
   useEffect(() => {
     // Filters can change faster than the network responds (e.g. clicking two filter chips in a
@@ -60,7 +65,7 @@ export default function Explorer() {
     return () => {
       cancelled = true;
     };
-  }, [owners, types, orbits]);
+  }, [owners, types, orbits, dataVersion]);
 
   const ctx: PanelCtx = { meta, ts, bars };
   const panel = (id: PanelId, extra = "") => (

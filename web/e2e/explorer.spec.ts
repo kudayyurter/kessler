@@ -43,6 +43,11 @@ function trackErrors(page: Page): string[] {
   return errors;
 }
 
+// The snapshot fixture's header says it was published 2026-09-23T12:00:00Z. Tests that read the
+// status pill fix the page clock relative to that, so the age is deterministic.
+const FIXTURE_PUBLISHED = Date.parse("2026-09-23T12:00:00Z");
+const hoursAfterFixture = (h: number) => new Date(FIXTURE_PUBLISHED + h * 3_600_000);
+
 test("explorer renders tiles, charts, globe and attribution", async ({ page }) => {
   const errors = trackErrors(page);
   await mockApi(page);
@@ -131,6 +136,7 @@ test("falls back to the un-versioned snapshot when the pointer fetch fails", asy
 });
 
 test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) => {
+  await page.clock.setFixedTime(hoursAfterFixture(2));
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await page.goto("/");
@@ -298,6 +304,7 @@ test("panels do not overlap at 1280x720", async ({ page }) => {
 // really visible — the element at its centre is the badge itself, not something covering it.
 for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 720]] as const) {
   test(`${w}x${h}: no overlap and LIVE badge visible`, async ({ page }) => {
+    await page.clock.setFixedTime(hoursAfterFixture(2));
     await page.setViewportSize({ width: w, height: h });
     await mockApi(page);
     await page.goto("/");
@@ -331,8 +338,86 @@ for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 7
       expect(b.bottom).toBeLessThanOrEqual(h);
     }
     const badge = page.getByTestId("live-badge");
+    await expect(badge).toContainText("LIVE");
     const bb = (await badge.boundingBox())!;
-    const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.textContent ?? null, [bb.x + bb.width / 2, bb.y + bb.height / 2]);
-    expect(hit, "element at the LIVE badge's centre").toBe("● LIVE");
+    const inside = await page.evaluate(
+      ([x, y]) => !!document.elementFromPoint(x, y)?.closest("[data-testid=live-badge]"),
+      [bb.x + bb.width / 2, bb.y + bb.height / 2],
+    );
+    expect(inside, "the element at the status pill's centre belongs to the pill").toBe(true);
   });
 }
+
+test("the status pill says LIVE with the data age, and the exact time on hover", async ({ page }) => {
+  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await mockApi(page);
+  await page.goto("/");
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("LIVE", { timeout: 10_000 });
+  await expect(pill).toContainText("2h ago");
+  await expect(pill).toHaveAttribute("title", "Elements published 2026-09-23 12:00 UTC");
+});
+
+test("the status pill says DELAYED when the data is over 12 hours old", async ({ page }) => {
+  await page.clock.setFixedTime(hoursAfterFixture(14));
+  await mockApi(page);
+  await page.goto("/");
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("DELAYED", { timeout: 10_000 });
+  await expect(pill).toContainText("14h ago");
+});
+
+test("a failed higher-orbits load is named in the pill and Retry recovers it", async ({ page }) => {
+  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await mockApi(page);
+  let highFails = true;
+  await page.route("**/api/globe/snapshot**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("group") !== "HIGH") return route.fallback();
+    return highFails
+      ? route.fulfill({ status: 503, body: JSON.stringify({ error: { code: "unavailable", message: "x" } }), contentType: "application/json" })
+      : route.fulfill({ status: 200, body: fx("snapshot-leo.bin.gz"), contentType: "application/octet-stream" });
+  });
+  await page.goto("/");
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("LIVE", { timeout: 10_000 });
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await expect(pill).toContainText("higher orbits failed");
+  highFails = false;
+  await pill.getByRole("button", { name: "Retry" }).click();
+  await expect(pill).toContainText("2h ago");
+  await expect(pill.getByRole("button", { name: "Retry" })).toHaveCount(0);
+});
+
+test("a newly published generation replaces the orbits without a reload and keeps the selection", async ({ page }) => {
+  await page.clock.setFixedTime(hoursAfterFixture(2));
+  await mockApi(page);
+  let generation = "20260924T004100Z-r42";
+  await page.route("**/api/globe/current", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ generation, generated_at: "2026-09-23T12:00:00+00:00", groups: { LEO: { count: 2 }, HIGH: { count: 0 } } }),
+    }),
+  );
+  const snapshotGenerations: (string | null)[] = [];
+  let metaRequests = 0;
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    if (u.pathname === "/api/globe/snapshot") snapshotGenerations.push(u.searchParams.get("gen"));
+    if (u.pathname === "/api/meta") metaRequests++;
+  });
+  await page.goto("/");
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  await expect(page.getByTestId("object-card")).toBeVisible();
+  const metaBefore = metaRequests;
+  generation = "20260926T064100Z-r43";
+  // A check runs whenever the tab becomes visible; the page is visible, so this triggers one.
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect.poll(() => snapshotGenerations).toContain("20260926T064100Z-r43");
+  await expect.poll(() => metaRequests).toBeGreaterThan(metaBefore);
+  await expect(page.getByTestId("object-card")).toBeVisible();
+  await expect(page.getByTestId("live-badge")).toContainText("LIVE");
+});

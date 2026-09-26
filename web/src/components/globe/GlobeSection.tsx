@@ -2,24 +2,17 @@
 
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
 import { simClock } from "@/lib/clock";
-import { nameCache } from "@/lib/names";
-import { loadSnapshot, type OrbitRecord } from "@/lib/snapshot";
+import type { GroupName } from "@/lib/globeData";
 import { useExplorer } from "@/lib/store";
 import { subsolarPoint } from "@/lib/sun";
 import { GlobeErrorBoundary } from "@/components/globe/GlobeErrorBoundary";
 import { GlobeScene } from "@/components/globe/GlobeScene";
+import { StatusPill } from "@/components/globe/StatusPill";
+import { useGlobeData } from "@/components/globe/useGlobeData";
 import { hasWebGL } from "@/components/globe/webgl";
 
 const NO_WEBGL_MESSAGE = "This device can't show the 3D globe (WebGL is unavailable). Charts and search still work.";
-
-type Status = "loading" | "ready" | "missing" | "error";
-
-async function fetchGroup(group: "LEO" | "HIGH", generation: string | undefined): Promise<OrbitRecord[] | null> {
-  const gz = await api.snapshot(group, generation);
-  return gz ? (await loadSnapshot(gz)).records : null;
-}
 
 // `live` is true once the <Canvas> is mounted and ticking simClock every frame. Without it (no
 // WebGL, or the probe hasn't resolved yet) nothing ever advances simClock.t past its initial
@@ -57,10 +50,6 @@ function Readout({ live }: { live: boolean }) {
 
 export function GlobeSection() {
   const [webgl, setWebgl] = useState<boolean | null>(null);
-  const [leo, setLeo] = useState<OrbitRecord[] | null>(null);
-  const [high, setHigh] = useState<OrbitRecord[] | null>(null);
-  const [status, setStatus] = useState<Status>("loading");
-  const [source, setSource] = useState<{ generation: string | undefined } | null>(null);
   const [renderFailed, setRenderFailed] = useState(false);
   const [contextLost, setContextLost] = useState(false);
   // Whether the globe card is scrolled into view *and* the tab is foregrounded. Drives both the
@@ -74,7 +63,11 @@ export function GlobeSection() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
   const setTopBarBottom = useExplorer((s) => s.setTopBarBottom);
-  const wantHigh = useExplorer((s) => s.orbits.high);
+  const setDataVersion = useExplorer((s) => s.setDataVersion);
+  const orbits = useExplorer((s) => s.orbits);
+  const globe = useGlobeData(orbits.high);
+  const leoStatus = globe.groups.LEO.status;
+  const wanted: GroupName[] = [...(orbits.leo ? (["LEO"] as const) : []), ...(orbits.high ? (["HIGH"] as const) : [])];
   // True once WebGL is unavailable for any reason: no support at all, the R3F render tree threw
   // (caught by GlobeErrorBoundary), or the GPU context was lost after the canvas mounted. All
   // three show the same fallback message in place of the globe.
@@ -86,34 +79,8 @@ export function GlobeSection() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setWebgl(hasWebGL()), []);
 
-  useEffect(() => {
-    let cancelled = false;
-    // Pointer first, so LEO, HIGH and the name labels all come from one published generation.
-    // No pointer yet (or it failed): fall back to the un-versioned endpoints.
-    api.current()
-      .catch(() => null)
-      .then((pointer) => {
-        if (cancelled) return null;
-        const generation = pointer?.generation;
-        nameCache.useGeneration(generation);
-        setSource({ generation });
-        return fetchGroup("LEO", generation);
-      })
-      .then((records) => {
-        if (cancelled) return;
-        setLeo(records);
-        setStatus(records ? "ready" : "missing");
-      })
-      .catch(() => !cancelled && setStatus("error"));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!wantHigh || high || !source) return;
-    fetchGroup("HIGH", source.generation).then(setHigh).catch(() => undefined);
-  }, [wantHigh, high, source]);
+  // Lets the page re-fetch the overview and charts when a newer generation is swapped in.
+  useEffect(() => setDataVersion(globe.version), [globe.version, setDataVersion]);
 
   // webglcontextlost is a native browser event (GPU reset, driver crash, too many contexts),
   // not a thrown error, so GlobeErrorBoundary can't see it — listen on the canvas directly and
@@ -175,18 +142,24 @@ export function GlobeSection() {
             gl={{ antialias: true }}
           >
             <color attach="background" args={["#000000"]} />
-            <GlobeScene leo={leo} high={high} active={active} labelsRef={labelsRef} sectionRef={sectionRef} />
+            <GlobeScene
+              leo={globe.groups.LEO.records}
+              high={globe.groups.HIGH.records}
+              active={active}
+              labelsRef={labelsRef}
+              sectionRef={sectionRef}
+            />
           </Canvas>
         </GlobeErrorBoundary>
       )}
       <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 text-center">
         {broken && <p className="text-sm text-ink-2">{NO_WEBGL_MESSAGE}</p>}
-        {webgl && !broken && status === "loading" && <p className="label">Loading orbits…</p>}
-        {webgl && !broken && status === "missing" && <p className="text-sm text-ink-2">Orbit data not available yet.</p>}
-        {webgl && !broken && status === "error" && <p className="text-sm text-ink-2">Data unavailable. The Earth is shown without objects.</p>}
+        {webgl && !broken && (leoStatus === "loading" || leoStatus === "idle") && <p className="label">Loading orbits…</p>}
+        {webgl && !broken && leoStatus === "missing" && <p className="text-sm text-ink-2">Orbit data not available yet.</p>}
+        {webgl && !broken && leoStatus === "error" && <p className="text-sm text-ink-2">Data unavailable. The Earth is shown without objects.</p>}
       </div>
       {/* Labels go BELOW the control bar in stacking order (DOM order + the bar's z-10), so a label
-          can never cover the LIVE badge or the readout. */}
+          can never cover the status pill or the readout. */}
       <div ref={labelsRef} data-testid="globe-labels" aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden" />
       {/* Bottom-sheet layout (<1024 wide or <560 tall): the sheet docks at the bottom, so these
           controls sit in a top bar (a single row on short screens). Desktop: bottom-centre, bounded
@@ -198,14 +171,10 @@ export function GlobeSection() {
         className="pointer-events-none absolute inset-x-2 top-3 z-10 flex flex-col items-center gap-2 short:flex-row short:justify-center short:gap-3 wide:bottom-4 wide:left-[calc(16px+var(--col-l)+8px)] wide:right-[calc(16px+var(--col-r)+8px)] wide:top-auto"
       >
         <Readout live={webgl === true && !broken} />
-        {/* Non-interactive: real time is the only speed there is now (no Fast mode), so this is a
-            status badge, not a control — no role=button, not focusable, no click handler. */}
-        <p
-          data-testid="live-badge"
-          className="label pointer-events-auto select-none rounded-full border-2 border-line !text-ink bg-[#121212] px-3 py-2"
-        >
-          <span aria-hidden="true" style={{ color: "#7fd06b" }}>●</span>{" "}LIVE
-        </p>
+        {/* Hidden without WebGL: the "can't show the 3D globe" message already explains the page. */}
+        {webgl === true && !broken && (
+          <StatusPill input={{ groups: globe.groups, wanted, generatedAt: globe.generatedAt }} onRetry={globe.retry} />
+        )}
       </div>
     </section>
   );

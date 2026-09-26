@@ -99,3 +99,14 @@ describe("top bar measured bottom", () => {
     expect(useExplorer.getState().topBarBottom).toBeNull();
   });
 });
+
+describe("dataVersion", () => {
+  it("starts at 0, is set by setDataVersion and cleared by reset", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().dataVersion).toBe(0);
+    useExplorer.getState().setDataVersion(3);
+    expect(useExplorer.getState().dataVersion).toBe(3);
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().dataVersion).toBe(0);
+  });
+});

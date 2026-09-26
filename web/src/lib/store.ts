@@ -19,6 +19,9 @@ interface ExplorerState extends Filters {
   // Bottom edge (viewport px) of the globe's top bar (readout + LIVE badge) in the bottom-sheet
   // layout, measured by GlobeSection — with mobileSheetTop it bounds the visible globe area.
   topBarBottom: number | null;
+  // Bumped by GlobeSection whenever a newly published generation is swapped in (see
+  // createGlobeData's `version`); the page re-fetches the overview and charts when it changes.
+  dataVersion: number;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -29,10 +32,11 @@ interface ExplorerState extends Filters {
   setMobileSheetOpen: (open: boolean) => void;
   setMobileSheetTop: (top: number | null) => void;
   setTopBarBottom: (bottom: number | null) => void;
+  setDataVersion: (v: number) => void;
   reset: () => void;
 }
 
-const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mobileSheetOpen" | "mobileSheetTop" | "topBarBottom"> => ({
+const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mobileSheetOpen" | "mobileSheetTop" | "topBarBottom" | "dataVersion"> => ({
   types: [...OBJECT_TYPES],
   owners: [],
   orbits: { leo: true, high: false },
@@ -41,6 +45,7 @@ const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mob
   mobileSheetOpen: true,
   mobileSheetTop: null,
   topBarBottom: null,
+  dataVersion: 0,
 });
 
 export const useExplorer = create<ExplorerState>((set) => ({
@@ -74,6 +79,7 @@ export const useExplorer = create<ExplorerState>((set) => ({
   setMobileSheetOpen: (mobileSheetOpen) => set({ mobileSheetOpen }),
   setMobileSheetTop: (mobileSheetTop) => set({ mobileSheetTop }),
   setTopBarBottom: (topBarBottom) => set({ topBarBottom }),
+  setDataVersion: (dataVersion) => set({ dataVersion }),
   reset: () => set(initial()),
 }));
 
