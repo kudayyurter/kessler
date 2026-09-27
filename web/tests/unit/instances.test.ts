@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { interpolate, locateIn } from "@/components/globe/instances";
+import { duringSwap, interpolate, locateIn } from "@/components/globe/instances";
 
 describe("interpolate", () => {
   const frames = {
@@ -46,5 +46,25 @@ describe("locateIn", () => {
 
   it("is absent (not pending) when the object's positions are NaN", () => {
     expect(locateIn(frames, 1, 1500, new THREE.Vector3())).toBe("absent");
+  });
+});
+
+describe("duringSwap", () => {
+  it("downgrades absent to pending while a swap is in progress", () => {
+    expect(duringSwap("absent", true)).toBe("pending");
+  });
+
+  it("leaves absent alone once no swap is in progress", () => {
+    expect(duringSwap("absent", false)).toBe("absent");
+  });
+
+  it("leaves pending alone during a swap", () => {
+    expect(duringSwap("pending", true)).toBe("pending");
+  });
+
+  it("passes a found position through unchanged, swap or not", () => {
+    const v = new THREE.Vector3(1, 2, 3);
+    expect(duringSwap(v, true)).toBe(v);
+    expect(duringSwap(v, false)).toBe(v);
   });
 });

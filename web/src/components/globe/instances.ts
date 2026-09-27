@@ -29,3 +29,13 @@ export function locateIn(frames: Frames, index: number | undefined, timeMs: numb
   if (!frames.prev || !frames.next) return "pending";
   return interpolate(frames, timeMs, index, out) ? out : "absent";
 }
+
+/**
+ * During a data swap, a group's locator still answers from the previous generation's records
+ * (see usePropagation's `shown`), so "absent" there only means "not in the previous generation" —
+ * it says nothing about the new one, which might add or fix the object. Downgrade "absent" to
+ * "pending" while `swapping`; a real position is passed through unchanged.
+ */
+export function duringSwap(found: Found, swapping: boolean): Found {
+  return swapping && found === "absent" ? "pending" : found;
+}

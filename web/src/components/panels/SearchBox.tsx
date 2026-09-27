@@ -11,7 +11,7 @@ export function SearchBox() {
   // Bumped by Retry: re-runs the same query, and hides the failed answer until the new one arrives.
   const [attempt, setAttempt] = useState(0);
   const [answer, setAnswer] = useState<SearchAnswer | null>(null);
-  const select = useExplorer((s) => s.select);
+  const selectFromSearch = useExplorer((s) => s.selectFromSearch);
   const text = q.trim();
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export function SearchBox() {
         <ul className="mt-2 max-h-56 overflow-auto rounded-[10px] border-2 border-line">
           {view.results.map((r) => (
             <li key={r.norad_id}>
-              <button type="button" onClick={() => { select(r.norad_id); setQ(""); }} className="flex w-full justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-[#161616]">
+              <button type="button" onClick={() => { selectFromSearch(r); setQ(""); }} className="flex w-full justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-[#161616]">
                 <span className="text-ink">{r.name}</span>
                 <span className="font-mono text-[12px] text-ink-3">{TYPE_LABELS[r.object_type]} · {r.decayed ? "re-entered" : r.regime}</span>
               </button>

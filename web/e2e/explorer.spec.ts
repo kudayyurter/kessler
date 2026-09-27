@@ -10,6 +10,15 @@ import { expect, test, type Page } from "@playwright/test";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fx = (name: string) => readFileSync(path.join(dirname, "../tests/fixtures", name));
 
+// The LEO fixture snapshot with its records' NORAD IDs rewritten (records start after the JSON
+// header; each is 88 bytes with the NORAD ID as a little-endian uint32 at offset 0).
+function snapshotWithIds(ids: number[]): Buffer {
+  const raw = zlib.gunzipSync(fx("snapshot-leo.bin.gz"));
+  const start = 8 + raw.readUInt32LE(4);
+  ids.forEach((id, i) => raw.writeUInt32LE(id, start + i * 88));
+  return zlib.gzipSync(raw);
+}
+
 // The fixture /meta lists only US and PRC; tests of the owner picker add a few more owners.
 function metaWithOwners(): string {
   const meta = JSON.parse(fx("api/meta.json").toString());
@@ -146,6 +155,73 @@ test("zooming in on a searched object shows name labels near the centre; clickin
   for (let i = 0; i < 80; i++) await page.mouse.wheel(0, 400);
   await expect(labelsContainer).toHaveAttribute("data-active", "0", { timeout: 15_000 });
   expect(await labels.count()).toBe(0);
+});
+
+test("selecting a higher-orbit search result turns on Higher orbits and flies to it", async ({ page }) => {
+  await mockApi(page);
+  const HIGH_ID = 99001;
+  await page.route("**/api/globe/snapshot**", (route) =>
+    new URL(route.request().url()).searchParams.get("group") === "HIGH"
+      ? route.fulfill({ status: 200, body: snapshotWithIds([HIGH_ID, 99002]), contentType: "application/octet-stream" })
+      : route.fallback(),
+  );
+  await page.route("**/api/globe/names**", (route) =>
+    new URL(route.request().url()).searchParams.get("group") === "HIGH"
+      ? route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ generated_at: "2026-09-23T12:00:00Z", names: { [HIGH_ID]: "TEST GEO", 99002: "OTHER GEO" } }) })
+      : route.fallback(),
+  );
+  await page.route("**/api/objects/search**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ norad_id: HIGH_ID, name: "TEST GEO", cospar_id: "2020-001A", object_type: "PAY", owner: "US", regime: "GEO", decayed: false }]),
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.getByLabel("Find an object").fill("test geo");
+  await page.getByRole("button", { name: /TEST GEO/ }).click();
+  await expect(page.getByTestId("filter-summary")).toContainText("All orbits");
+  await expect(page.getByTestId("globe-labels").locator("button", { hasText: "TEST GEO" })).toBeVisible({ timeout: 15_000 });
+});
+
+test("a re-entered object's card says why it has no position", async ({ page }) => {
+  await mockApi(page);
+  const obj = JSON.parse(fx("api/object.json").toString());
+  await page.route("**/api/objects/25544", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...obj, decay_date: "2024-03-08" }) }),
+  );
+  await page.route("**/api/objects/search**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ norad_id: 25544, name: "ISS (ZARYA)", cospar_id: "1998-067A", object_type: "PAY", owner: "ISS", regime: "LEO", decayed: true }]),
+    }),
+  );
+  await page.goto("/");
+  await page.getByLabel("Find an object").fill("iss");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  await expect(page.getByTestId("no-position")).toContainText("Re-entered on");
+});
+
+test("an object missing from its loaded group says there is no current orbit data", async ({ page }) => {
+  await mockApi(page);
+  const obj = JSON.parse(fx("api/object.json").toString());
+  await page.route("**/api/objects/12345", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...obj, norad_id: 12345, decay_date: null, regime: "LEO" }) }),
+  );
+  await page.route("**/api/objects/search**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ norad_id: 12345, name: "LOST SAT", cospar_id: "2001-001A", object_type: "PAY", owner: "US", regime: "LEO", decayed: false }]),
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.getByLabel("Find an object").fill("lost");
+  await page.getByRole("button", { name: /LOST SAT/ }).click();
+  await expect(page.getByTestId("no-position")).toHaveText("No current orbit data for this object.", { timeout: 15_000 });
 });
 
 test("survives API failure", async ({ page }) => {

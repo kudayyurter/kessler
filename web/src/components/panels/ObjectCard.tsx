@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { fmtDate, fmtKm } from "@/lib/format";
+import { noPositionReason } from "@/lib/selection";
 import { useExplorer } from "@/lib/store";
 import { TYPE_LABELS, type ObjectDetail } from "@/lib/types";
 import { Unavailable } from "@/components/ui/Unavailable";
@@ -19,6 +20,7 @@ function Row({ k, v }: { k: string; v: string }) {
 export function ObjectCard() {
   const selectedId = useExplorer((s) => s.selectedId);
   const select = useExplorer((s) => s.select);
+  const presence = useExplorer((s) => s.selectionOnGlobe);
   const [obj, setObj] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState(false);
 
@@ -37,12 +39,14 @@ export function ObjectCard() {
   }, [selectedId]);
 
   if (selectedId === null) return null;
+  const reason = obj ? noPositionReason(obj, presence) : null;
   return (
     <div data-testid="object-card">
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-mono text-[19px] text-ink">{obj?.name ?? `NORAD ${selectedId}`}</h2>
         <button type="button" onClick={() => select(null)} className="text-sm text-ink-2 hover:text-ink" aria-label="Close">✕</button>
       </div>
+      {reason && <p data-testid="no-position" className="mt-2 text-[13px] text-ink-2">{reason}</p>}
       {error && <Unavailable what="object details" />}
       {obj && (
         <dl className="mt-3">

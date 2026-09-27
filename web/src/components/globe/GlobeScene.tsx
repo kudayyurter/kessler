@@ -84,26 +84,36 @@ export function GlobeScene({
     else camera.clearViewOffset();
   }, [camera, size.width, size.height, sheetLayout, topBarBottom, sheetTop]);
 
+  // Pending fly-to: every selection starts "pending" (see the store); each frame, look for the
+  // object in the groups expected to be loaded and fly the moment it has a position — after Higher
+  // orbits finish downloading, or the orbit worker's first frame. "absent" (its group loaded without
+  // it) ends the wait; the object card then says why there's no position.
+  const fly = useRef<{ cancel(): void } | null>(null);
+  const resumeControls = useCallback(() => {
+    const c = controls.current;
+    if (!c) return;
+    c.enabled = true;
+    c.update();
+  }, []);
+  // A new selection (or clearing it) cancels a flight still in progress.
+  useEffect(
+    () => () => {
+      if (!fly.current) return;
+      fly.current.cancel();
+      fly.current = null;
+      resumeControls();
+    },
+    [selectedId, resumeControls],
+  );
+
+  // A swap may add or fix the very object that's selected: an "absent" verdict reached against
+  // the previous generation says nothing about the new one, so re-open the pending wait and let
+  // the per-frame check below run again.
+  const dataVersion = useExplorer((s) => s.dataVersion);
   useEffect(() => {
-    if (selectedId === null) return;
-    const p = locate(locators.current, [0, 1], selectedId);
-    if (!(p instanceof THREE.Vector3)) return;
-    // OrbitControls and the fly-to tween both write camera.position; hand off control to the
-    // tween for its duration so they don't fight, then resync OrbitControls' internal state
-    // (damping offset etc.) from wherever the camera ended up before handing control back.
-    const resume = () => {
-      const c = controls.current;
-      if (!c) return;
-      c.enabled = true;
-      c.update();
-    };
-    if (controls.current) controls.current.enabled = false;
-    const fly = flyTo(camera, p, Math.max(1.35, p.length() + 0.45), resume);
-    return () => {
-      fly.cancel();
-      resume();
-    };
-  }, [selectedId, camera]);
+    const st = useExplorer.getState();
+    if (st.selectedId !== null && st.selectionOnGlobe === "absent") st.setSelectionOnGlobe("pending");
+  }, [dataVersion]);
 
   const onReadyLeo = useCallback((f: Locator | undefined) => (locators.current[0] = f), []);
   const onReadyHigh = useCallback((f: Locator | undefined) => (locators.current[1] = f), []);
@@ -116,6 +126,23 @@ export function GlobeScene({
   const earthCyOrigin = useRef(new THREE.Vector3());
   useFrame((_, dt) => {
     simClock.tick();
+
+    const st = useExplorer.getState();
+    if (st.selectedId !== null && st.selectionOnGlobe === "pending") {
+      const found = locate(locators.current, st.orbits.high ? [0, 1] : [0], st.selectedId);
+      if (found === "absent") {
+        st.setSelectionOnGlobe("absent");
+      } else if (found !== "pending") {
+        st.setSelectionOnGlobe("shown");
+        // OrbitControls and the tween both write camera.position; hand control to the tween, then
+        // resync OrbitControls from wherever the camera ended up.
+        if (controls.current) controls.current.enabled = false;
+        fly.current = flyTo(camera, found, Math.max(1.35, found.length() + 0.45), () => {
+          fly.current = null;
+          resumeControls();
+        });
+      }
+    }
 
     // Test-only (never in production): where the Earth is rendered, throttled to 250 ms.
     if (process.env.NODE_ENV !== "production") {

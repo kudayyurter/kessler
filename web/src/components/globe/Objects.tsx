@@ -9,7 +9,7 @@ import type { OrbitRecord } from "@/lib/snapshot";
 import { isVisible, useExplorer } from "@/lib/store";
 import type { Locator } from "@/components/globe/flyTo";
 import { usePropagation, type PropagationFrames } from "@/components/globe/usePropagation";
-import { locateIn } from "@/components/globe/instances";
+import { duringSwap, locateIn } from "@/components/globe/instances";
 import { applyFrame, artScale, buildObjectGeometry, dotScale, frameAlpha, lodFade, setVisibility } from "@/components/globe/objectPoints";
 import { createObjectMaterial, updateObjectUniforms } from "@/components/globe/objectMaterial";
 import { createAtlasTexture } from "@/components/globe/spriteAtlas";
@@ -41,6 +41,10 @@ export function Objects({
   // generation's until the new worker's first frame (see usePropagation); before the first frame
   // they are `records` (nothing is drawn until frames arrive).
   const view = shown ?? records;
+  // A swap is in progress once the worker for `records` is running but hasn't produced its first
+  // frame yet: `view` (and this group's locator, below) still answers from the previous
+  // generation, so its "absent" isn't final — see duringSwap.
+  const swapping = shown !== null && shown !== records;
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const gl = useThree((s) => s.gl);
   const height = useThree((s) => s.size.height);
@@ -77,10 +81,10 @@ export function Objects({
   useLayoutEffect(() => {
     onReady?.((noradId) => {
       const v = new THREE.Vector3();
-      return locateIn(frames.current, indexById.get(noradId), simClock.now(), v);
+      return duringSwap(locateIn(frames.current, indexById.get(noradId), simClock.now(), v), swapping);
     });
     return () => onReady?.(undefined);
-  }, [indexById, frames, onReady]);
+  }, [indexById, frames, onReady, swapping]);
 
   useLayoutEffect(() => {
     onLabelSource?.({ group, records: view, visible, frames });
