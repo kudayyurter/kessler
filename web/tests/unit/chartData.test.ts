@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { chartTitle, crossoverYear, ownerLabel, visibleTypeSeries } from "@/lib/chartData";
-import type { TimeseriesResponse } from "@/lib/types";
+import { chartTitle, crossoverYear, ownerLabel, visibleTypeSeries, ownerHighlight } from "@/lib/chartData";
+import type { TimeseriesResponse, BreakdownResponse } from "@/lib/types";
 
 const TS: TimeseriesResponse = {
   metric: "in_orbit", group_by: "type", years: [2022, 2023, 2024, 2025],
@@ -13,8 +13,8 @@ const TS: TimeseriesResponse = {
 };
 
 describe("chartData", () => {
-  it("keeps PAY, DEB, R/B in a fixed order", () => {
-    expect(visibleTypeSeries(TS).map((s) => s.key)).toEqual(["PAY", "DEB", "R/B"]);
+  it("keeps PAY, DEB, R/B in a fixed order and includes Unknown", () => {
+    expect(visibleTypeSeries(TS).map((s) => s.key)).toEqual(["PAY", "DEB", "R/B", "UNK"]);
   });
   it("finds the year payloads overtook debris", () => {
     expect(crossoverYear(TS)).toBe(2024);
@@ -30,5 +30,45 @@ describe("chartData", () => {
     expect(ownerLabel("US", owners)).toBe("United States");
     expect(ownerLabel("_other", owners)).toBe("Other");
     expect(ownerLabel("POR", owners)).toBe("POR");
+  });
+});
+
+describe("visibleTypeSeries with Unknown", () => {
+  it("includes the Unknown series, after the other three", () => {
+    const ts = { metric: "in_orbit", group_by: "type", years: [2020], series: [
+      { key: "UNK", values: [1] }, { key: "PAY", values: [2] }, { key: "DEB", values: [3] }, { key: "R/B", values: [4] },
+    ] } as unknown as Parameters<typeof visibleTypeSeries>[0];
+    expect(visibleTypeSeries(ts).map((s) => s.key)).toEqual(["PAY", "DEB", "R/B", "UNK"]);
+  });
+});
+
+describe("ownerHighlight", () => {
+  const bars = (extra: Partial<BreakdownResponse> = {}): BreakdownResponse => ({
+    at: 2026, by: "owner",
+    rows: [
+      { key: "US", counts: { PAY: 10 }, total: 10 },
+      { key: "PRC", counts: { DEB: 5 }, total: 5 },
+      { key: "_other", counts: { PAY: 3 }, total: 3 },
+    ],
+    ...extra,
+  });
+
+  it("highlights nothing without a selected owner", () => {
+    expect(ownerHighlight(bars(), null)).toEqual({ highlight: null, extra: null });
+  });
+
+  it("highlights a ranked row in place", () => {
+    expect(ownerHighlight(bars(), "PRC")).toEqual({ highlight: "PRC", extra: null });
+  });
+
+  it("adds an extra row with the rank for an owner outside the ranked rows", () => {
+    const r = ownerHighlight(bars({ rank_of: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } }), "GER");
+    expect(r).toEqual({ highlight: "GER", extra: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } });
+  });
+
+  it("an owner with none under the filters gets an empty extra row", () => {
+    expect(ownerHighlight(bars({ rank_of: null }), "GER")).toEqual({
+      highlight: "GER", extra: { key: "GER", rank: null, counts: {}, total: 0 },
+    });
   });
 });

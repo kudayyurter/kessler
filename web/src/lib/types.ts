@@ -45,7 +45,8 @@ export interface TimeseriesResponse {
 }
 
 export interface BreakdownRow { key: string; counts: Partial<Record<ObjectType, number>>; total: number }
-export interface BreakdownResponse { at: number; by: "owner" | "type" | "regime"; rows: BreakdownRow[] }
+export interface RankedRow extends BreakdownRow { rank: number }
+export interface BreakdownResponse { at: number; by: "owner" | "type" | "regime"; rows: BreakdownRow[]; rank_of?: RankedRow | null }
 
 export interface BreakupEvent {
   id: string;
