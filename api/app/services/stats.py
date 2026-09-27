@@ -69,7 +69,7 @@ def breakdown(
         counts[r["key"]][r["object_type"]] = int(r["n"])
     rows = sorted(
         ({"key": k, "counts": c, "total": sum(c.values())} for k, c in counts.items()),
-        key=lambda row: -row["total"],
+        key=lambda row: (-row["total"], row["key"]),
     )
     # The requested key's rank among ALL keys (before the top-N fold), so the Owners chart can
     # show a selected owner outside the top rows with its rank.

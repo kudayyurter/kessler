@@ -93,6 +93,17 @@ def test_breakdown_rank_of(world):
     assert "rank_of" not in breakdown(world, at_year=2008, by="owner", filters=ALL)
 
 
+def test_breakdown_ranks_tied_owners_by_key(world):
+    # FR ties US at 2 in-orbit objects (2008): the rank order between them must not depend on
+    # whatever order the underlying rows happen to come back from the database.
+    insert_object(world, 5, object_type="PAY", owner="FR", first_seen_year=2000, name="TIE A")
+    insert_object(world, 6, object_type="PAY", owner="FR", first_seen_year=2000, name="TIE B")
+    rebuild_yearly_stats(world)
+    r = breakdown(world, at_year=2008, by="owner", filters=ALL)
+    tied = [(row["key"], row["total"]) for row in r["rows"] if row["key"] in ("FR", "US")]
+    assert tied == [("FR", 2), ("US", 2)]
+
+
 def test_distribution_perigee_bins(world):
     r = distribution(world, field="perigee", filters=ALL, bin_width=100)
     assert [(b["key"], b["total"]) for b in r["bins"]] == [("400", 1), ("35700", 1)]
