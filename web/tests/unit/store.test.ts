@@ -107,6 +107,16 @@ describe("top bar measured bottom", () => {
   });
 });
 
+describe("HIGH group status", () => {
+  it("starts idle, can be set, and resets to idle", () => {
+    expect(useExplorer.getState().highStatus).toBe("idle");
+    useExplorer.getState().setHighStatus("error");
+    expect(useExplorer.getState().highStatus).toBe("error");
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().highStatus).toBe("idle");
+  });
+});
+
 describe("setData", () => {
   it("does nothing at version 0 (nothing to publish on the first load), and sets both together once the version changes", () => {
     useExplorer.getState().reset();

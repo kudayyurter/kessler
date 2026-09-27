@@ -224,6 +224,33 @@ test("an object missing from its loaded group says there is no current orbit dat
   await expect(page.getByTestId("no-position")).toHaveText("No current orbit data for this object.", { timeout: 15_000 });
 });
 
+test("a stuck higher-orbit selection explains why, instead of waiting forever", async ({ page }) => {
+  await mockApi(page);
+  const obj = JSON.parse(fx("api/object.json").toString());
+  await page.route("**/api/objects/99001", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...obj, norad_id: 99001, decay_date: null, regime: "GEO" }) }),
+  );
+  // The HIGH group fails every time it's asked for — locate() can never reach "absent" for it (see
+  // GlobeScene.tsx: that verdict needs every *expected* group to have loaded), so without a reason
+  // keyed off the group's own status, this selection would stay "pending" forever.
+  await page.route("**/api/globe/snapshot**", (route) =>
+    new URL(route.request().url()).searchParams.get("group") === "HIGH"
+      ? route.fulfill({ status: 503, body: JSON.stringify({ error: { code: "unavailable", message: "x" } }), contentType: "application/json" })
+      : route.fallback(),
+  );
+  await page.route("**/api/objects/search**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ norad_id: 99001, name: "TEST GEO", cospar_id: "2020-001A", object_type: "PAY", owner: "US", regime: "GEO", decayed: false }]),
+    }),
+  );
+  await page.goto("/");
+  await page.getByLabel("Find an object").fill("test geo");
+  await page.getByRole("button", { name: /TEST GEO/ }).click();
+  await expect(page.getByTestId("no-position")).toHaveText("Higher-orbit positions aren't available right now.", { timeout: 15_000 });
+});
+
 test("survives API failure", async ({ page }) => {
   const errors = trackErrors(page);
   await mockApi(page, { "/": { status: 500 } });

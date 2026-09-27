@@ -21,6 +21,7 @@ export function ObjectCard() {
   const selectedId = useExplorer((s) => s.selectedId);
   const select = useExplorer((s) => s.select);
   const presence = useExplorer((s) => s.selectionOnGlobe);
+  const highStatus = useExplorer((s) => s.highStatus);
   const [obj, setObj] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState(false);
 
@@ -39,7 +40,7 @@ export function ObjectCard() {
   }, [selectedId]);
 
   if (selectedId === null) return null;
-  const reason = obj ? noPositionReason(obj, presence) : null;
+  const reason = obj ? noPositionReason(obj, presence, highStatus) : null;
   return (
     <div data-testid="object-card">
       <div className="flex items-start justify-between gap-3">

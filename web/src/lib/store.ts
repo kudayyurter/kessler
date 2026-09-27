@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Orbits } from "@/lib/filterSummary";
+import type { GroupStatus } from "@/lib/globeData";
 import { browserStorage, DEFAULT_VISIBILITY, loadVisibility, saveVisibility, type PanelId } from "@/lib/panels";
 import { filtersToShow, type Findable, type GlobePresence } from "@/lib/selection";
 import { OBJECT_TYPES, type ObjectType, type OwnerSummary, type Regime } from "@/lib/types";
@@ -36,6 +37,10 @@ interface ExplorerState extends Filters {
   ownerDirectory: OwnerSummary[];
   // Bumped by openPanel so the phone sheet (MobileSheet) can switch to that tab.
   panelRequest: { id: PanelId; n: number } | null;
+  // The HIGH globe-data group's load status (see globeData.ts), published by GlobeSection —
+  // ObjectCard reads it so a MEO/GEO/HEO selection that can never resolve (the group failed or
+  // came back missing) gets a reason instead of sitting "pending" forever. See noPositionReason.
+  highStatus: GroupStatus;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -57,6 +62,7 @@ interface ExplorerState extends Filters {
   resetFilters: () => void;
   setOwnerDirectory: (list: OwnerSummary[]) => void;
   openPanel: (id: PanelId) => void;
+  setHighStatus: (status: GroupStatus) => void;
   reset: () => void;
 }
 
@@ -73,6 +79,7 @@ const initial = (): Filters &
     | "dataGeneration"
     | "ownerDirectory"
     | "panelRequest"
+    | "highStatus"
   > => ({
   types: [...OBJECT_TYPES],
   owners: [],
@@ -87,6 +94,7 @@ const initial = (): Filters &
   dataGeneration: undefined,
   ownerDirectory: [],
   panelRequest: null,
+  highStatus: "idle",
 });
 
 export const useExplorer = create<ExplorerState>((set, get) => ({
@@ -135,6 +143,7 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
   setMobileSheetOpen: (mobileSheetOpen) => set({ mobileSheetOpen }),
   setMobileSheetTop: (mobileSheetTop) => set({ mobileSheetTop }),
   setTopBarBottom: (topBarBottom) => set({ topBarBottom }),
+  setHighStatus: (highStatus) => set({ highStatus }),
   setData: (version, generation) =>
     set((s) => (version === s.dataVersion ? s : { dataVersion: version, dataGeneration: generation })),
   setSelectionOnGlobe: (p) => set((s) => (s.selectedId === null ? s : { selectionOnGlobe: p })),

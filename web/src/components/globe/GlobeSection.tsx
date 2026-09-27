@@ -65,9 +65,11 @@ export function GlobeSection() {
   const topBarRef = useRef<HTMLDivElement>(null);
   const setTopBarBottom = useExplorer((s) => s.setTopBarBottom);
   const setData = useExplorer((s) => s.setData);
+  const setHighStatus = useExplorer((s) => s.setHighStatus);
   const orbits = useExplorer((s) => s.orbits);
   const globe = useGlobeData(orbits.high);
   const leoStatus = globe.groups.LEO.status;
+  const highStatus = globe.groups.HIGH.status;
   const wanted: GroupName[] = [...(orbits.leo ? (["LEO"] as const) : []), ...(orbits.high ? (["HIGH"] as const) : [])];
   // True once WebGL is unavailable for any reason: no support at all, the R3F render tree threw
   // (caught by GlobeErrorBoundary), or the GPU context was lost after the canvas mounted. All
@@ -88,6 +90,14 @@ export function GlobeSection() {
   useEffect(() => {
     setData(globe.version, globe.generation);
   }, [globe.version, globe.generation, setData]);
+
+  // Published so ObjectCard (outside the <Canvas> tree, with no access to `globe` itself) can
+  // explain a MEO/GEO/HEO selection that would otherwise wait "pending" forever — see
+  // noPositionReason and GlobeScene's per-frame check, which only reaches "absent" once every
+  // *loaded* expected group has been checked (a failed/missing group never loads).
+  useEffect(() => {
+    setHighStatus(highStatus);
+  }, [highStatus, setHighStatus]);
 
   // webglcontextlost is a native browser event (GPU reset, driver crash, too many contexts),
   // not a thrown error, so GlobeErrorBoundary can't see it — listen on the canvas directly and

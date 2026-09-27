@@ -58,4 +58,20 @@ describe("noPositionReason", () => {
     expect(noPositionReason({ decay_date: null, regime: "LEO" }, "pending")).toBeNull();
     expect(noPositionReason({ decay_date: null, regime: "GEO" }, "shown")).toBeNull();
   });
+
+  it("says higher-orbit positions aren't available when the HIGH group failed or is missing", () => {
+    for (const highStatus of ["error", "missing"] as const) {
+      for (const regime of ["MEO", "GEO", "HEO"] as const) {
+        expect(noPositionReason({ decay_date: null, regime }, "pending", highStatus))
+          .toBe("Higher-orbit positions aren't available right now.");
+      }
+    }
+  });
+
+  it("does not blame the HIGH group for a LEO object, or once HIGH is loading/ready", () => {
+    expect(noPositionReason({ decay_date: null, regime: "LEO" }, "pending", "error")).toBeNull();
+    for (const highStatus of ["idle", "loading", "ready"] as const) {
+      expect(noPositionReason({ decay_date: null, regime: "GEO" }, "pending", highStatus)).toBeNull();
+    }
+  });
 });
