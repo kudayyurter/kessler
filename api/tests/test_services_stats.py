@@ -84,6 +84,15 @@ def test_breakdown_by_owner(world):
     ]
 
 
+def test_breakdown_rank_of(world):
+    r = breakdown(world, at_year=2008, by="owner", filters=ALL, top=1, rank_of="PRC")
+    assert [row["key"] for row in r["rows"]] == ["US", "_other"]
+    assert r["rank_of"] == {"key": "PRC", "rank": 2, "counts": {"DEB": 1}, "total": 1}
+    none = breakdown(world, at_year=2008, by="owner", filters=ALL, rank_of="GER")
+    assert none["rank_of"] is None
+    assert "rank_of" not in breakdown(world, at_year=2008, by="owner", filters=ALL)
+
+
 def test_distribution_perigee_bins(world):
     r = distribution(world, field="perigee", filters=ALL, bin_width=100)
     assert [(b["key"], b["total"]) for b in r["bins"]] == [("400", 1), ("35700", 1)]

@@ -1,3 +1,5 @@
+import re
+
 import psycopg
 
 from app.domain.orbits import OPS_STATUS_LABELS
@@ -10,6 +12,14 @@ ELEMENT_KEYS = (
     "mean_anomaly", "bstar", "mean_motion_dot", "mean_motion_ddot", "source",
 )
 INTERNAL_KEYS = {"g_inclination", "g_norad", "event_name", "event_date", *ELEMENT_KEYS}
+
+SEPARATORS = re.compile(r"[-_\s]+")
+
+
+def normalise_name(text: str) -> str:
+    """Runs of hyphens, underscores and whitespace become one space, so "starlink 1007",
+    "starlink-1007" and "STARLINK_1007" all match STARLINK-1007."""
+    return SEPARATORS.sub(" ", text).strip()
 
 
 def escape_like(s: str) -> str:
@@ -61,9 +71,18 @@ def search_objects(conn: psycopg.Connection, q: str, limit: int = 20) -> list[di
         return conn.execute(base + "WHERE norad_id = %s", (int(q),)).fetchall()
     if len(q) < 2:
         raise ApiError(422, "invalid_query", "search text must be at least 2 characters")
+    name_q = normalise_name(q)
+    # A query of only separators normalises to nothing; don't let it match every name.
+    name_clause = (
+        "regexp_replace(name, '[-_[:space:]]+', ' ', 'g') ILIKE %(p)s ESCAPE '\\' OR "
+        if len(name_q) >= 2
+        else ""
+    )
     return conn.execute(
         base
-        + "WHERE name ILIKE %(p)s ESCAPE '\\' OR cospar_id ILIKE %(c)s ESCAPE '\\' "
+        + "WHERE "
+        + name_clause
+        + "cospar_id ILIKE %(c)s ESCAPE '\\' "
         "ORDER BY (decay_date IS NULL) DESC, norad_id LIMIT %(limit)s",
-        {"p": f"%{escape_like(q)}%", "c": f"{escape_like(q.upper())}%", "limit": limit},
+        {"p": f"%{escape_like(name_q)}%", "c": f"{escape_like(q.upper())}%", "limit": limit},
     ).fetchall()

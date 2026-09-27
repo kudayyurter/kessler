@@ -78,6 +78,18 @@ def test_search_rejects_oversized_number_without_db_error(world):
     assert search_objects(world, "99999999999") == []
 
 
+def test_search_treats_spaces_hyphens_and_underscores_alike(conn):
+    insert_object(conn, 44713, name="STARLINK-1007")
+    insert_object(conn, 44714, name="STARLINK-1008")
+    for q in ("starlink 1007", "starlink-1007", "STARLINK_1007", "starlink  -  1007"):
+        assert [o["norad_id"] for o in search_objects(conn, q)] == [44713], q
+
+
+def test_search_ignores_separator_only_queries(world):
+    assert search_objects(world, "--") == []
+    assert search_objects(world, "_ _") == []
+
+
 def test_list_events_counts_pieces(world):
     world.execute("UPDATE objects SET event_id = 'fengyun-1c-2007' WHERE norad_id = 2")
     events = {e["id"]: e for e in list_events(world)}

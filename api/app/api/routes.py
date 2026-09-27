@@ -94,12 +94,13 @@ def breakdown(
     types: str | None = None,
     regimes: str | None = None,
     top: int = Query(8, ge=1, le=30),
+    rank_of: str | None = Query(None, max_length=16),
     conn: psycopg.Connection = Depends(get_conn),
 ) -> dict:
     filters = parse_filters(conn, owners, types, regimes)
     year, _ = parse_year_range(at, at, this_year()) if at is not None else (this_year(), None)
     cache(response, 3600)
-    return stats.breakdown(conn, at_year=year, by=by, filters=filters, top=top)
+    return stats.breakdown(conn, at_year=year, by=by, filters=filters, top=top, rank_of=rank_of)
 
 
 @router.get("/stats/distribution")

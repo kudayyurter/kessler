@@ -51,7 +51,13 @@ def timeseries(
 
 
 def breakdown(
-    conn: psycopg.Connection, *, at_year: int, by: str, filters: Filters, top: int = 8
+    conn: psycopg.Connection,
+    *,
+    at_year: int,
+    by: str,
+    filters: Filters,
+    top: int = 8,
+    rank_of: str | None = None,
 ) -> dict:
     where, params = filters.where()
     query = sql.SQL(
@@ -65,6 +71,18 @@ def breakdown(
         ({"key": k, "counts": c, "total": sum(c.values())} for k, c in counts.items()),
         key=lambda row: -row["total"],
     )
+    # The requested key's rank among ALL keys (before the top-N fold), so the Owners chart can
+    # show a selected owner outside the top rows with its rank.
+    ranked = None
+    if rank_of is not None:
+        ranked = next(
+            (
+                {"key": row["key"], "rank": i + 1, "counts": row["counts"], "total": row["total"]}
+                for i, row in enumerate(rows)
+                if row["key"] == rank_of
+            ),
+            None,
+        )
     if by == "owner" and len(rows) > top:
         other: dict[str, int] = defaultdict(int)
         for row in rows[top:]:
@@ -72,7 +90,10 @@ def breakdown(
                 other[t] += n
         rows = rows[:top] + [{"key": OTHER_KEY, "counts": dict(other),
                               "total": sum(other.values())}]
-    return {"at": at_year, "by": by, "rows": rows}
+    out: dict = {"at": at_year, "by": by, "rows": rows}
+    if rank_of is not None:
+        out["rank_of"] = ranked
+    return out
 
 
 def distribution(

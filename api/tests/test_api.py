@@ -97,6 +97,12 @@ def test_breakdown_and_distribution(client):
     assert [x["key"] for x in d["bins"]] == ["400"]
 
 
+def test_breakdown_rank_of_param(client):
+    r = client.get("/api/stats/breakdown?by=owner&at=2008&rank_of=PRC")
+    assert r.status_code == 200
+    assert r.json()["rank_of"]["rank"] == 2
+
+
 def test_objects_and_search(client):
     assert client.get("/api/objects/1").json()["name"] == "ALPHA SAT"
     missing = client.get("/api/objects/999")
