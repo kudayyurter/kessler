@@ -95,6 +95,31 @@ export function GlobeScene({
     c.enabled = true;
     c.update();
   }, []);
+  // Starts a new flight, first cancelling any flight already in progress: re-selecting the same
+  // object (see the store's `select`) can bounce `selectionOnGlobe` back to "pending" without
+  // `selectedId` changing, so the cleanup effect below never runs for it — without this, the
+  // previous tween would keep animating alongside a second one, and whichever finished first would
+  // clear `fly.current`/resume controls out from under the other. `live` (not the returned handle)
+  // guards the completion callback against firing for a flight that's no longer the current one:
+  // it can't compare against the handle itself, because flyTo's reduced-motion path calls this
+  // callback synchronously, before flyTo has returned a handle to capture.
+  const startFlight = useCallback(
+    (found: THREE.Vector3) => {
+      fly.current?.cancel();
+      fly.current = null;
+      if (controls.current) controls.current.enabled = false;
+      let live = true;
+      const handle = flyTo(camera, found, Math.max(1.35, found.length() + 0.45), () => {
+        if (!live) return;
+        live = false;
+        fly.current = null;
+        resumeControls();
+      });
+      // Reduced motion already ran the callback above, synchronously — nothing left to store.
+      if (live) fly.current = handle;
+    },
+    [camera, resumeControls],
+  );
   // A new selection (or clearing it) cancels a flight still in progress.
   useEffect(
     () => () => {
@@ -106,14 +131,18 @@ export function GlobeScene({
     [selectedId, resumeControls],
   );
 
-  // A swap may add or fix the very object that's selected: an "absent" verdict reached against
-  // the previous generation says nothing about the new one, so re-open the pending wait and let
-  // the per-frame check below run again.
+  // A swap, or toggling Higher orbits, may add or fix the very object that's selected: an "absent"
+  // verdict reached against the old data says nothing about the new data, so re-open the pending
+  // wait and let the per-frame check below run again. Keyed on `leo`/`high` (not just `dataVersion`)
+  // because turning Higher orbits on is a filter change, not a data swap, and never bumps
+  // dataVersion — and because the records props change in the same R3F commit whose Objects layout
+  // effects register the swap-aware locator (see Objects.tsx/instances.ts's duringSwap).
   const dataVersion = useExplorer((s) => s.dataVersion);
+  const orbitsHigh = useExplorer((s) => s.orbits.high);
   useEffect(() => {
     const st = useExplorer.getState();
     if (st.selectedId !== null && st.selectionOnGlobe === "absent") st.setSelectionOnGlobe("pending");
-  }, [dataVersion]);
+  }, [dataVersion, leo, high, orbitsHigh]);
 
   const onReadyLeo = useCallback((f: Locator | undefined) => (locators.current[0] = f), []);
   const onReadyHigh = useCallback((f: Locator | undefined) => (locators.current[1] = f), []);
@@ -134,13 +163,7 @@ export function GlobeScene({
         st.setSelectionOnGlobe("absent");
       } else if (found !== "pending") {
         st.setSelectionOnGlobe("shown");
-        // OrbitControls and the tween both write camera.position; hand control to the tween, then
-        // resync OrbitControls from wherever the camera ended up.
-        if (controls.current) controls.current.enabled = false;
-        fly.current = flyTo(camera, found, Math.max(1.35, found.length() + 0.45), () => {
-          fly.current = null;
-          resumeControls();
-        });
+        startFlight(found);
       }
     }
 

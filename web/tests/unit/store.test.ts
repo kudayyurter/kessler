@@ -129,6 +129,30 @@ describe("selection and filter actions", () => {
     expect(useExplorer.getState().selectionOnGlobe).toBeNull();
   });
 
+  it("re-selecting the object already shown keeps it shown instead of replaying the fly-to", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().select(7);
+    useExplorer.getState().setSelectionOnGlobe("shown");
+    useExplorer.getState().select(7);
+    expect(useExplorer.getState().selectionOnGlobe).toBe("shown");
+  });
+
+  it("re-selecting an object still pending leaves it pending", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().select(7);
+    expect(useExplorer.getState().selectionOnGlobe).toBe("pending");
+    useExplorer.getState().select(7);
+    expect(useExplorer.getState().selectionOnGlobe).toBe("pending");
+  });
+
+  it("re-selecting an object marked absent reopens the pending wait", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().select(7);
+    useExplorer.getState().setSelectionOnGlobe("absent");
+    useExplorer.getState().select(7);
+    expect(useExplorer.getState().selectionOnGlobe).toBe("pending");
+  });
+
   it("selectFromSearch shows the object first, then selects it", () => {
     useExplorer.getState().reset();
     useExplorer.getState().setOwners(["US"]);

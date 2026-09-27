@@ -104,11 +104,15 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
       return next.leo || next.high ? { orbits: next } : s;
     }),
   select: (id) =>
-    set((s) =>
-      id === null
-        ? { selectedId: null, selectionOnGlobe: null }
-        : { selectedId: id, selectionOnGlobe: "pending", panels: { ...s.panels, search: true } },
-    ),
+    set((s) => {
+      if (id === null) return { selectedId: null, selectionOnGlobe: null };
+      // Re-selecting the object already on screen (e.g. clicking its search result again while
+      // its card is open) must not replay the fly-to arc — only reopen the pending wait when the
+      // last attempt came up "absent" (a natural retry point; GlobeScene's per-frame check runs
+      // again from there).
+      if (id === s.selectedId) return s.selectionOnGlobe === "absent" ? { selectionOnGlobe: "pending" } : s;
+      return { selectedId: id, selectionOnGlobe: "pending", panels: { ...s.panels, search: true } };
+    }),
   setPanel: (id, shown) =>
     set((s) => {
       const panels = { ...s.panels, [id]: shown };
