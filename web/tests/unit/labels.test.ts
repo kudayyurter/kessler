@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { behindEarth, HIDE_ABOVE, isOccluded, LABEL_MAX, labelAnchor, labelsActive, pickLabels, SHOW_BELOW, sourceFor, type Candidate } from "@/lib/labels";
+import { behindEarth, HIDE_ABOVE, isOccluded, LABEL_MAX, labelAnchor, labelsActive, pickLabels, SHOW_BELOW, sourceFor, sourceToAdopt, type Candidate } from "@/lib/labels";
 
 const W = 1000, H = 800;
 const c = (id: number, x: number, y: number, extra: Partial<Candidate> = {}): Candidate => ({ id, x, y, name: `SAT ${id}`, color: "#fff", occluded: false, ...extra });
@@ -145,5 +145,27 @@ describe("sourceFor", () => {
 
   it("returns undefined for an undefined sources list", () => {
     expect(sourceFor(undefined, ["a"])).toBeUndefined();
+  });
+});
+
+describe("sourceToAdopt", () => {
+  // LabelDriver's filter-hide fix: a filter toggle that hides THIS object publishes a new source
+  // with the same `records` identity but `visible[i]` now false. reproject must treat that like a
+  // swap (hide, force a reselect) rather than keep the label up for the rest of the 250ms cadence.
+  it("adopts the matching source when the object is still visible in it", () => {
+    const records = ["a"];
+    const current = [{ records, visible: [true, true] }];
+    expect(sourceToAdopt(current, records, 1)).toBe(current[0]);
+  });
+
+  it("returns undefined when the matching source now hides this object", () => {
+    const records = ["a"];
+    const current = [{ records, visible: [true, false] }];
+    expect(sourceToAdopt(current, records, 1)).toBeUndefined();
+  });
+
+  it("returns undefined when no current source shares the records identity (a swap)", () => {
+    const current = [{ records: ["b"], visible: [true] }];
+    expect(sourceToAdopt(current, ["a"], 0)).toBeUndefined();
   });
 });

@@ -57,6 +57,20 @@ export function sourceFor<T extends { records: R }, R>(current: readonly (T | un
   return current?.find((s) => s !== undefined && s.records === records);
 }
 
+/** The source reproject should adopt for an entry at record index `i`: the same as `sourceFor`,
+ * but undefined too when that source now hides this particular object (`visible[i]` is false) —
+ * a filter toggle that hid THIS object publishes a new source with the same `records` but that
+ * flag now false. reproject must treat that exactly like a swap (hide the label, force a
+ * reselect) instead of leaving it up — and clickable — for the rest of the 250ms cadence. */
+export function sourceToAdopt<T extends { records: R; visible: boolean[] }, R>(
+  current: readonly (T | undefined)[] | undefined,
+  records: R,
+  i: number,
+): T | undefined {
+  const match = sourceFor(current, records);
+  return match?.visible[i] ? match : undefined;
+}
+
 export type Candidate = { id: number; x: number; y: number; name: string; color: string; occluded: boolean };
 export type Placed = Candidate & { left: number; top: number };
 /** Screen region (CSS px) where labels may appear: the part of the globe not covered by UI —
