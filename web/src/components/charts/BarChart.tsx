@@ -49,9 +49,15 @@ export function BarChart({
   const { highlight, extra } = ownerHighlight(data, selected, rankFor);
   const ranked = data.rows.slice(0, 6);
   const rows = extra ? [...ranked, extra] : ranked;
+  // Only the types actually present in the ranked data (like the History legend's
+  // visibleTypeSeries) — a type the current filters exclude has no counts anywhere in
+  // `data.rows`, so it shouldn't get a swatch either.
+  const presentKeys = KEYS.filter((k) => data.rows.some((r) => (r.counts[k] ?? 0) > 0));
   const tooltipLabels = rows.map((r) => ownerLabel(r.key, owners));
-  const labels = rows.map((r, i) => (extra && r === extra ? `${tooltipLabels[i]} #${extra.rank ?? "—"}` : tooltipLabels[i]));
-  const { marginLeft, display } = labelColumn(labels, width);
+  // The rank suffix is passed separately (not appended before truncating) so it always survives
+  // — labelColumn truncates only the owner name in front of it. See scales.ts.
+  const suffixes = rows.map((r) => (extra && r === extra ? ` #${extra.rank ?? "—"}` : undefined));
+  const { marginLeft, display } = labelColumn(tooltipLabels, width, suffixes);
   const H = Math.max(160, rows.length * 48 + M.t + M.b);
   const x = scaleLinear().domain([0, Math.max(1, ...rows.map((r) => r.total))]).range([marginLeft, width - M.r]);
   const y = scaleBand().domain(rows.map((r) => r.key)).range([M.t, H - M.b]).padding(0.38);
@@ -86,7 +92,7 @@ export function BarChart({
   return (
     <div ref={wrap} className="relative">
       <div className="mb-2 flex flex-wrap gap-4 text-[13px] text-ink-2">
-        {KEYS.map((k) => (
+        {presentKeys.map((k) => (
           <span key={k} className="inline-flex items-center gap-2">
             <i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: CHART_COLORS[k] }} />
             {TYPE_LABELS[k]}
@@ -141,7 +147,7 @@ export function BarChart({
                   pointerEvents="none"
                 />
               )}
-              <text x={x(row.total) + 8} y={(y(row.key) ?? 0) + y.bandwidth() / 2 + 4} className="fill-ink-2 font-mono text-[12px]">
+              <text x={x(row.total) + 8} y={(y(row.key) ?? 0) + y.bandwidth() / 2 + 4} className={`font-mono text-[12px] ${row.key === highlight ? "fill-ink" : "fill-ink-2"}`}>
                 {fmtInt(row.total)}
               </text>
             </g>

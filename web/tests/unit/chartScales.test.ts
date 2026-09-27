@@ -68,6 +68,17 @@ describe("labelColumn", () => {
     expect(display[0]).toBe("United Kingdom");
     expect(display[1]).toBe("China");
   });
+
+  it("truncates only the name, never a per-label suffix like a rank", () => {
+    const { display } = labelColumn(["Asia Satellite Telecommunications Organization"], 120, [" #9"]);
+    expect(display[0].endsWith(" #9")).toBe(true);
+    expect(display[0]).not.toContain("#…");
+  });
+
+  it("still leaves an untruncated name and its suffix both intact when there's room", () => {
+    const { display } = labelColumn(["China", "USA"], 400, [" #9", undefined]);
+    expect(display).toEqual(["China #9", "USA"]);
+  });
 });
 
 describe("yearTicks", () => {

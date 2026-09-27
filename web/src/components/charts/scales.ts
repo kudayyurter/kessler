@@ -101,12 +101,26 @@ const LABEL_RESERVE = 24;
 // needing truncation by its own rounding.
 const LABEL_CHECK_RESERVE = LABEL_RESERVE - 4;
 
-export function labelColumn(labels: string[], width: number): { marginLeft: number; display: string[] } {
-  const longest = Math.max(0, ...labels.map((l) => l.length));
+/**
+ * `suffixes[i]` (e.g. a Bar Chart row's " #9" rank) is appended after truncation and never
+ * truncated itself — only the name in front of it loses characters to an ellipsis. Without this,
+ * truncating the whole "name #rank" string could cut the rank off entirely (see BarChart.tsx).
+ */
+export function labelColumn(
+  labels: string[],
+  width: number,
+  suffixes: (string | undefined)[] = [],
+): { marginLeft: number; display: string[] } {
+  const longest = Math.max(0, ...labels.map((l, i) => l.length + (suffixes[i]?.length ?? 0)));
   const marginLeft = Math.min(Math.ceil(longest * CHAR_W) + LABEL_RESERVE, Math.round(width * 0.38));
   const avail = Math.max(0, marginLeft - LABEL_CHECK_RESERVE);
   const maxChars = Math.max(1, Math.floor(avail / CHAR_W));
-  const display = labels.map((l) => (l.length <= maxChars ? l : `${l.slice(0, Math.max(0, maxChars - 1))}…`));
+  const display = labels.map((l, i) => {
+    const suffix = suffixes[i] ?? "";
+    const nameBudget = Math.max(1, maxChars - suffix.length);
+    const name = l.length <= nameBudget ? l : `${l.slice(0, Math.max(0, nameBudget - 1))}…`;
+    return name + suffix;
+  });
   return { marginLeft, display };
 }
 

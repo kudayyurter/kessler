@@ -760,6 +760,48 @@ test("shows no false 'none under these filters' row while a newly selected owner
   await expect(page.locator('[data-row="GER"]')).toContainText("#9", { timeout: 5_000 });
 });
 
+test("the Owners legend only lists the types present in the ranked data", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const ownersPanel = page.locator('[data-panel="owners"]');
+  await ownersPanel.getByRole("img", { name: "Objects in orbit by owner and type" }).scrollIntoViewIfNeeded();
+  // The breakdown fixture has no Unknown counts at all (PAY/DEB/R/B only) — the legend must not
+  // claim a fourth type the chart has no segment for, the way the History legend already follows
+  // visibleTypeSeries.
+  await expect(ownersPanel.getByText("Unknown", { exact: true })).toHaveCount(0);
+  await expect(ownersPanel.getByText("Payloads", { exact: true })).toBeVisible();
+  await expect(ownersPanel.getByText("Debris", { exact: true })).toBeVisible();
+  await expect(ownersPanel.getByText("Rocket bodies", { exact: true })).toBeVisible();
+});
+
+test("the highlighted owner's total is bright, not dimmed like the others", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByRole("img", { name: "Objects in orbit by owner and type" }).scrollIntoViewIfNeeded();
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).fill("china");
+  await page.getByRole("option", { name: /^🇨🇳 China/ }).click();
+  const total = page.locator('[data-row="PRC"] text').last();
+  await expect(total).toHaveClass(/(^|\s)fill-ink(\s|$)/);
+});
+
+test("a long owner name's rank is never truncated away", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockApi(page, { "/meta": { status: 200, body: metaWithLongOwnerName() } });
+  await page.route("**/api/stats/breakdown**", async (route) => {
+    const u = new URL(route.request().url());
+    const body = JSON.parse(fx("api/breakdown.json").toString());
+    if (u.searchParams.get("rank_of") === "LONG") body.rank_of = { key: "LONG", rank: 9, counts: { PAY: 86 }, total: 86 };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).fill("Z");
+  await page.getByRole("option", { name: /^Z{50}/ }).first().click();
+  // The name itself is long enough to need truncating; the rank must survive that intact.
+  await expect(page.locator('[data-row="LONG"]')).toContainText("#9");
+});
+
 test("selecting an owner does not replay the ranked bars' entrance animation", async ({ page }) => {
   await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
   // The ranked rows (US, PRC, _other) never change; only `rank_of` (and so the response body,
