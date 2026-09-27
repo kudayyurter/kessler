@@ -1,10 +1,10 @@
 import { create } from "zustand";
+import type { Orbits } from "@/lib/filterSummary";
 import { browserStorage, DEFAULT_VISIBILITY, loadVisibility, saveVisibility, type PanelId } from "@/lib/panels";
 import { filtersToShow, type Findable, type GlobePresence } from "@/lib/selection";
 import { OBJECT_TYPES, type ObjectType, type OwnerSummary, type Regime } from "@/lib/types";
 
-export type Orbits = { leo: boolean; high: boolean };
-export type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits };
+type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits };
 
 interface ExplorerState extends Filters {
   selectedId: number | null;
