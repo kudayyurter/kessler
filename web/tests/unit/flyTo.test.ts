@@ -34,4 +34,14 @@ describe("locate", () => {
   it("ignores groups that aren't expected", () => {
     expect(locate([has(5), has(9)], [0], 9)).toBe("absent");
   });
+
+  it("skips a hole before finding the group that has it", () => {
+    expect(locate([undefined, has(9)], [0, 1], 9)).toBe(at);
+  });
+
+  it("is pending when one expected group is pending and another is absent", () => {
+    const pendingGroup: Locator = () => "pending";
+    const absentGroup: Locator = () => "absent";
+    expect(locate([pendingGroup, absentGroup], [0, 1], 9)).toBe("pending");
+  });
 });

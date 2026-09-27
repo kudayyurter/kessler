@@ -9,7 +9,7 @@ import type { OrbitRecord } from "@/lib/snapshot";
 import { isVisible, useExplorer } from "@/lib/store";
 import type { Locator } from "@/components/globe/flyTo";
 import { usePropagation, type PropagationFrames } from "@/components/globe/usePropagation";
-import { interpolate } from "@/components/globe/instances";
+import { locateIn } from "@/components/globe/instances";
 import { applyFrame, artScale, buildObjectGeometry, dotScale, frameAlpha, lodFade, setVisibility } from "@/components/globe/objectPoints";
 import { createObjectMaterial, updateObjectUniforms } from "@/components/globe/objectMaterial";
 import { createAtlasTexture } from "@/components/globe/spriteAtlas";
@@ -28,7 +28,7 @@ export function Objects({
 }: {
   records: OrbitRecord[];
   group: "LEO" | "HIGH";
-  onReady?: (positionOf: Locator) => void;
+  onReady?: (positionOf: Locator | undefined) => void;
   /** Whether the globe is visible/foregrounded — see GlobeSection/GlobeScene. Pauses the
    * propagation worker's tick interval while false. */
   active?: boolean;
@@ -76,11 +76,10 @@ export function Objects({
   const indexById = useMemo(() => new Map(view.map((r, i) => [r.noradId, i])), [view]);
   useLayoutEffect(() => {
     onReady?.((noradId) => {
-      const i = indexById.get(noradId);
-      if (i === undefined) return "absent";
       const v = new THREE.Vector3();
-      return interpolate(frames.current, simClock.now(), i, v) ? v : "pending";
+      return locateIn(frames.current, indexById.get(noradId), simClock.now(), v);
     });
+    return () => onReady?.(undefined);
   }, [indexById, frames, onReady]);
 
   useLayoutEffect(() => {

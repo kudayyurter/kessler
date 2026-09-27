@@ -105,8 +105,8 @@ export function GlobeScene({
     };
   }, [selectedId, camera]);
 
-  const onReadyLeo = useCallback((f: Locator) => (locators.current[0] = f), []);
-  const onReadyHigh = useCallback((f: Locator) => (locators.current[1] = f), []);
+  const onReadyLeo = useCallback((f: Locator | undefined) => (locators.current[0] = f), []);
+  const onReadyHigh = useCallback((f: Locator | undefined) => (locators.current[1] = f), []);
   const onLeoLabels = useCallback((s: LabelSource | null) => (labelSources.current[0] = s ?? undefined), []);
   const onHighLabels = useCallback((s: LabelSource | null) => (labelSources.current[1] = s ?? undefined), []);
 
