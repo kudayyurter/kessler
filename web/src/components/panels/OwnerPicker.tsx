@@ -60,16 +60,21 @@ export function OwnerPicker({
     onChange(o.code);
     close();
   };
-  const move = (step: number) => {
-    setOpen(true);
-    setActive((a) => Math.min(Math.max(a + step, 0), Math.max(options.length - 1, 0)));
-  };
   // Where the list should start highlighted when it opens: the selected owner's own row (so
   // Tab-then-Enter re-confirms it instead of silently clearing it to "All owners"), or the top.
   const initialActiveIndex = () => {
     if (value === null) return 0;
     const idx = options.findIndex((o) => o.code === value);
     return idx === -1 ? 0 : idx;
+  };
+  // Opening the list via an arrow key (rather than focus/click) must start from the same row
+  // focusing does — stepping from the *previous* `active` (often still 0, from the last close())
+  // skipped over "All owners" on the very first ArrowDown.
+  const [moveTick, setMoveTick] = useState(0);
+  const move = (step: number) => {
+    setOpen(true);
+    setActive((a) => (open ? Math.min(Math.max(a + step, 0), Math.max(options.length - 1, 0)) : initialActiveIndex()));
+    setMoveTick((t) => t + 1);
   };
 
   // Critical fix: the list used to be absolutely positioned, which desktop's scrolling panel
@@ -84,14 +89,19 @@ export function OwnerPicker({
 
   // Arrow-key navigation used to move `active` without ever scrolling its row into view, so
   // holding ArrowDown just walked off the bottom of the (still `max-h-64 overflow-auto`) list.
+  // Keyed on `moveTick` (bumped only by `move`, the arrow-key handler) rather than on `active`
+  // itself, so a hover-driven change to `active` (see onPointerMove below) never triggers this —
+  // scrolling the list out from under a pointer that only rested there, without pressing a key,
+  // is its own kind of hijack.
   useEffect(() => {
-    if (!open) return;
+    if (!open || moveTick === 0) return;
     const o = options[active];
     if (!o) return;
     document.getElementById(optionDomId(o))?.scrollIntoView({ block: "nearest" });
-    // optionDomId is a plain closure over the stable `listId`, not state — omitted from deps.
+    // Deliberately keyed on `moveTick` alone (see above) — `open`/`active`/`options`/`listId` are
+    // read for their current values, not to re-run this effect when they change on their own.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, open, options, listId]);
+  }, [moveTick]);
 
   // ARIA: a single owner can appear twice in the ungrouped list (once under "Largest", once again
   // under "A–Z") — only the first occurrence may claim aria-selected (a listbox has one selected
@@ -110,7 +120,11 @@ export function OwnerPicker({
         role="option"
         aria-selected={ariaSelectedHere}
         onClick={() => choose(o)}
-        onMouseEnter={() => setActive(i)}
+        // Real pointer movement only (N1): opening or scrolling the list can move a row under a
+        // pointer that never actually moved (e.g. Tab-focusing while the mouse rests over where
+        // the list is about to render) — onMouseEnter fires for that too, silently moving `active`
+        // (and so what Enter picks) away from wherever keyboard navigation left it.
+        onPointerMove={() => setActive(i)}
         className={`flex cursor-pointer items-center justify-between gap-3 px-3 py-1.5 text-[13px] ${i === active ? "bg-[#1d1d1d]" : ""} ${isSelected ? "text-ink" : o.dim ? "text-ink-3" : "text-ink"}`}
       >
         <span className="flex min-w-0 items-center gap-1.5 truncate">
@@ -158,7 +172,19 @@ export function OwnerPicker({
           // keystroke right then arrives as "<label><new char>", not a fresh query. While the box
           // was closed, start the query from whatever the user typed beyond that stale label
           // instead of searching for the label-plus-keystrokes (which can never match anything).
-          const next = open ? raw : raw.startsWith(shown) ? raw.slice(shown.length) : raw.length < shown.length ? "" : raw.replace(shown, "");
+          // A shorter value than the label only means "the label got deleted from" when the
+          // browser says so (N2): select-all then typing also arrives shorter than the label (the
+          // whole selection replaced by the first character), and that first character *is* the
+          // query — treating it as a deletion-in-progress cleared it to "", so the next keystroke
+          // landed on an empty box and the one after that dropped the first character typed.
+          const isDelete = e.nativeEvent instanceof InputEvent && e.nativeEvent.inputType.startsWith("delete");
+          const next = open
+            ? raw
+            : raw.startsWith(shown)
+              ? raw.slice(shown.length)
+              : raw.length < shown.length
+                ? (isDelete ? "" : raw)
+                : raw.replace(shown, "");
           setQuery(next);
           setOpen(true);
           setActive(0);

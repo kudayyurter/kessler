@@ -686,6 +686,65 @@ test("holding ArrowDown scrolls the highlighted option into view", async ({ page
   await expect(page.locator(`#${activeId}`)).toBeInViewport();
 });
 
+test('ArrowDown on a closed picker starts at "All owners", matching focus', async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.click();
+  await page.keyboard.press("Escape"); // closes it but keeps focus in the input
+  await page.keyboard.press("ArrowDown");
+  const activeId = await ownerInput.getAttribute("aria-activedescendant");
+  await expect(page.locator(`#${activeId}`)).toContainText("All owners");
+});
+
+test("a resting pointer under a reopened list does not steal the highlight from the selected owner", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.click();
+  await ownerInput.pressSequentially("germany");
+  await page.keyboard.press("Enter");
+  await expect(ownerInput).toHaveValue("🇩🇪 Germany");
+  // Reopen (still focused) to find where China's row lands, then close again — same layout each
+  // time the list opens with Germany selected and no query.
+  await ownerInput.click();
+  const chinaBox = (await page.getByRole("option", { name: /^🇨🇳 China/ }).first().boundingBox())!;
+  await page.keyboard.press("Escape");
+  // Rest the pointer where China's row will render once the list reopens, then blur and refocus
+  // with the keyboard alone — the pointer never moves, so its mere presence over a row that just
+  // mounted under it must not hijack the highlight away from Germany.
+  // Blur programmatically (not via a click elsewhere), so the mouse pointer itself never moves
+  // away from where it's about to rest — a click to blur would drag the pointer to wherever it
+  // clicked, defeating the whole point of a *resting* pointer.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(chinaBox.x + chinaBox.width / 2, chinaBox.y + chinaBox.height / 2);
+  await ownerInput.focus();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  // Give the browser's own hover recalculation (layout settling under the still pointer) a beat
+  // to run before confirming — this is what a real resting pointer reproduces.
+  await page.waitForTimeout(200);
+  await page.keyboard.press("Enter");
+  await expect(ownerInput).toHaveValue("🇩🇪 Germany");
+});
+
+test("select-all then typing keeps every character, not just the first one dropped", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.click();
+  await ownerInput.pressSequentially("germany");
+  await page.keyboard.press("Enter");
+  await expect(ownerInput).toHaveValue("🇩🇪 Germany");
+  await ownerInput.press("Control+a");
+  await ownerInput.pressSequentially("chi");
+  await expect(ownerInput).toHaveValue("chi");
+  await expect(page.getByRole("option")).toHaveCount(1);
+  await expect(page.getByRole("option", { name: /^🇨🇳 China/ })).toBeVisible();
+});
+
 test("selecting an owner then typing right away starts a fresh search, not the stale label plus a keystroke", async ({ page }) => {
   await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
   await page.goto("/");
