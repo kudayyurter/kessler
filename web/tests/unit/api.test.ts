@@ -139,6 +139,19 @@ describe("api", () => {
     expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/stats/breakdown?by=owner&top=5&gen=20260926T064100Z-r43");
   });
 
+  it("adds rank_of to the breakdown request when given", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (u: string) => {
+      urls.push(u);
+      return new Response(JSON.stringify({ at: 2026, by: "owner", rows: [] }), { status: 200 });
+    }));
+    await api.breakdown({ by: "owner", top: 5, rank_of: "GER" });
+    await api.breakdown({ by: "owner", top: 5 });
+    expect(new URL(urls[0], "http://x").searchParams.get("rank_of")).toBe("GER");
+    expect(new URL(urls[1], "http://x").searchParams.has("rank_of")).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
   // A request that never settles must not block every later check for the session — see
   // globeData.ts `check()`, which awaits `api.current()` (the pointer). AbortSignal.timeout gives
   // it (and the snapshot fetches) a hard ceiling.

@@ -63,6 +63,9 @@ export interface BreakdownQuery {
   regimes?: readonly Regime[];
   top?: number;
   gen?: string;
+  /** Ask the API to also return this owner's rank/counts (via `rank_of`) even when it falls
+   * outside the ranked rows — see BarChart's extra row. */
+  rank_of?: string;
 }
 
 type GlobeGroup = "LEO" | "HIGH";

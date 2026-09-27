@@ -3,16 +3,16 @@
 import { animate, stagger } from "animejs";
 import { scaleBand, scaleLinear } from "d3-scale";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ownerLabel } from "@/lib/chartData";
+import { ownerHighlight, ownerLabel, TYPE_ORDER } from "@/lib/chartData";
 import { fmtInt } from "@/lib/format";
 import { prefersReducedMotion } from "@/lib/motion";
 import { CHART_COLORS, TYPE_LABELS, type BreakdownResponse, type ObjectType, type OwnerSummary } from "@/lib/types";
 import { labelColumn, tooltipPosition } from "@/components/charts/scales";
 
-const KEYS: ObjectType[] = ["PAY", "DEB", "R/B"];
+const KEYS: ObjectType[] = TYPE_ORDER;
 const M = { t: 8, r: 60, b: 8 };
 
-export function BarChart({ data, owners }: { data: BreakdownResponse; owners: OwnerSummary[] }) {
+export function BarChart({ data, owners, selected = null }: { data: BreakdownResponse; owners: OwnerSummary[]; selected?: string | null }) {
   const wrap = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -35,8 +35,12 @@ export function BarChart({ data, owners }: { data: BreakdownResponse; owners: Ow
     }
   }, [tip]);
 
-  const rows = data.rows.slice(0, 6);
-  const labels = rows.map((r) => ownerLabel(r.key, owners));
+  const { highlight, extra } = ownerHighlight(data, selected);
+  const ranked = data.rows.slice(0, 6);
+  const rows = extra ? [...ranked, extra] : ranked;
+  const labels = rows.map((r) =>
+    extra && r === extra ? `${ownerLabel(r.key, owners)} #${extra.rank ?? "—"}` : ownerLabel(r.key, owners),
+  );
   const { marginLeft, display } = labelColumn(labels, width);
   const H = Math.max(160, rows.length * 48 + M.t + M.b);
   const x = scaleLinear().domain([0, Math.max(1, ...rows.map((r) => r.total))]).range([marginLeft, width - M.r]);
@@ -63,11 +67,24 @@ export function BarChart({ data, owners }: { data: BreakdownResponse; owners: Ow
 
   return (
     <div ref={wrap} className="relative">
+      <div className="mb-2 flex flex-wrap gap-4 text-[13px] text-ink-2">
+        {KEYS.map((k) => (
+          <span key={k} className="inline-flex items-center gap-2">
+            <i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: CHART_COLORS[k] }} />
+            {TYPE_LABELS[k]}
+          </span>
+        ))}
+      </div>
       <svg ref={svg} width={width} height={H} role="img" aria-label="Objects in orbit by owner and type" className="block max-w-full">
         {rows.map((row, i) => {
           let acc = 0;
           return (
-            <g key={row.key}>
+            <g
+              key={row.key}
+              data-row={row.key}
+              data-highlight={row.key === highlight ? "true" : undefined}
+              opacity={highlight && row.key !== highlight ? 0.35 : 1}
+            >
               <text x={marginLeft - 10} y={(y(row.key) ?? 0) + y.bandwidth() / 2 + 4} textAnchor="end" className="fill-ink font-mono text-[12px]">
                 {display[i]}
               </text>
@@ -93,12 +110,36 @@ export function BarChart({ data, owners }: { data: BreakdownResponse; owners: Ow
                   />
                 );
               })}
+              {row.key === highlight && row.total > 0 && (
+                <rect
+                  x={marginLeft - 3}
+                  y={(y(row.key) ?? 0) - 3}
+                  width={x(row.total) - marginLeft + 6}
+                  height={y.bandwidth() + 6}
+                  rx={6}
+                  fill="none"
+                  stroke="#f4f4f2"
+                  strokeWidth={2}
+                  pointerEvents="none"
+                />
+              )}
               <text x={x(row.total) + 8} y={(y(row.key) ?? 0) + y.bandwidth() / 2 + 4} className="fill-ink-2 font-mono text-[12px]">
                 {fmtInt(row.total)}
               </text>
             </g>
           );
         })}
+        {extra && (
+          <line
+            x1={0}
+            x2={width}
+            y1={(y(extra.key) ?? 0) - (y.step() - y.bandwidth()) / 2}
+            y2={(y(extra.key) ?? 0) - (y.step() - y.bandwidth()) / 2}
+            stroke="#2a2a2a"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+          />
+        )}
       </svg>
       {tip && tipPos && (
         <div

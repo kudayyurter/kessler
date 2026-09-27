@@ -93,7 +93,7 @@ export default function Explorer() {
         // already shown; these filters' own request failing shows the error, as before.
         setTs((m) => (m.data && tsShownKey.current === key ? m : { data: null, error: true }));
       });
-    api.breakdown({ by: "owner", types, regimes, top: 5, gen })
+    api.breakdown({ by: "owner", types, regimes, top: 5, gen, rank_of: owners[0] })
       .then((d) => {
         if (cancelled) return;
         barsShownKey.current = key;

@@ -639,6 +639,29 @@ test("the filter summary appears when filters change and Reset restores the defa
   await expect(page.getByRole("button", { name: "Higher orbits" })).toHaveAttribute("aria-pressed", "false");
 });
 
+test("the Owners chart ranks all owners and highlights the selected one, with its rank when outside the top 5", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  const breakdownOwners: (string | null)[] = [];
+  await page.route("**/api/stats/breakdown**", async (route) => {
+    const u = new URL(route.request().url());
+    breakdownOwners.push(u.searchParams.get("owners"));
+    const body = JSON.parse(fx("api/breakdown.json").toString());
+    if (u.searchParams.get("rank_of") === "GER") body.rank_of = { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto("/");
+  await expect(page.getByTestId("owners-scope")).toHaveText("All owners, ranked · Low Earth orbit · all types");
+  await expect(page.getByTestId("history-scope")).toHaveText("Low Earth orbit · All owners · all types");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).fill("germany");
+  await page.getByRole("option", { name: /^🇩🇪 Germany/ }).click();
+  const row = page.locator('[data-row="GER"]');
+  await expect(row).toContainText("#9");
+  await expect(row).toHaveAttribute("data-highlight", "true");
+  await expect(page.getByTestId("history-scope")).toHaveText("Low Earth orbit · 🇩🇪 Germany · all types");
+  expect(breakdownOwners.every((o) => o === null)).toBe(true);
+});
+
 test("a long owner name doesn't overflow the page or make the summary pill more than two lines tall", async ({ page }) => {
   await mockApi(page, { "/meta": { status: 200, body: metaWithLongOwnerName() } });
   await page.setViewportSize({ width: 320, height: 568 });
