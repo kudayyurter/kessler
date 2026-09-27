@@ -47,13 +47,26 @@ export interface ExtraRow {
 }
 
 /** Which Owners row to highlight, and — when the selected owner isn't among the ranked rows — the
- * extra row to show under them (from the response's `rank_of`; empty when it has none). */
-export function ownerHighlight(data: BreakdownResponse, selected: string | null): { highlight: string | null; extra: ExtraRow | null } {
+ * extra row to show under them (from the response's `rank_of`; empty when it has none).
+ *
+ * `rankFor` is the owner `data` actually asked `rank_of` for — the selected owner can change
+ * (or be cleared) before a slower-to-arrive response for a previous owner lands, and `data` is
+ * kept on screen until a newer one does. Trusting `data.rank_of` for a `selected` it wasn't
+ * fetched for would show a stale rank ("Germany #9" while UAE is selected) or, worse, a false
+ * "none under these filters" (`rank_of: null` for a previous owner, misread as confirming that
+ * *this* owner has none) — so while `rankFor !== selected` there is no extra row at all, only the
+ * highlight rule for rows already ranked. */
+export function ownerHighlight(
+  data: BreakdownResponse,
+  selected: string | null,
+  rankFor: string | null,
+): { highlight: string | null; extra: ExtraRow | null } {
   if (selected === null) return { highlight: null, extra: null };
   if (data.rows.some((r) => r.key === selected)) return { highlight: selected, extra: null };
+  if (rankFor !== selected) return { highlight: selected, extra: null };
   const r = data.rank_of;
   return {
     highlight: selected,
-    extra: r ? { key: r.key, rank: r.rank, counts: r.counts, total: r.total } : { key: selected, rank: null, counts: {}, total: 0 },
+    extra: r && r.key === selected ? { key: r.key, rank: r.rank, counts: r.counts, total: r.total } : { key: selected, rank: null, counts: {}, total: 0 },
   };
 }

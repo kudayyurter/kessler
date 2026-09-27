@@ -7,12 +7,12 @@ import { keepPrevIfEqual } from "@/lib/dedupe";
 import { PANELS, type PanelId } from "@/lib/panels";
 import { regimesFor, useExplorer } from "@/lib/store";
 import { useSheetLayout } from "@/lib/useIsMobile";
-import type { BreakdownResponse, Meta, TimeseriesResponse } from "@/lib/types";
+import type { Meta, TimeseriesResponse } from "@/lib/types";
 import { MobileSheet } from "@/components/layout/MobileSheet";
 import { Panel } from "@/components/layout/Panel";
 import { PanelColumn } from "@/components/layout/PanelColumn";
 import { PanelDock } from "@/components/layout/PanelDock";
-import { PANEL_CONTENT, type Load, type PanelCtx } from "@/components/panels/panelContent";
+import { PANEL_CONTENT, type BarsLoad, type Load, type PanelCtx } from "@/components/panels/panelContent";
 
 // GlobeSection pulls in three/R3F/satellite.js — by far the largest slice of the
 // page's JS — and only ever renders client-side anyway (it probes WebGL support in an effect and
@@ -28,7 +28,7 @@ const GlobeSection = dynamic(() => import("@/components/globe/GlobeSection").the
 export default function Explorer() {
   const [meta, setMeta] = useState<Load<Meta>>({ data: null, error: false });
   const [ts, setTs] = useState<Load<TimeseriesResponse>>({ data: null, error: false });
-  const [bars, setBars] = useState<Load<BreakdownResponse>>({ data: null, error: false });
+  const [bars, setBars] = useState<BarsLoad>({ data: null, error: false, rankFor: null });
   const owners = useExplorer((s) => s.owners);
   const types = useExplorer((s) => s.types);
   const orbits = useExplorer((s) => s.orbits);
@@ -93,15 +93,19 @@ export default function Explorer() {
         // already shown; these filters' own request failing shows the error, as before.
         setTs((m) => (m.data && tsShownKey.current === key ? m : { data: null, error: true }));
       });
+    // Recorded alongside the response (not read back off the store) so a slower-to-arrive
+    // response for a since-changed selection can be recognised as stale by ownerHighlight —
+    // see chartData.ts and BarsLoad above.
+    const rankFor = owners[0] ?? null;
     api.breakdown({ by: "owner", types, regimes, top: 5, gen, rank_of: owners[0] })
       .then((d) => {
         if (cancelled) return;
         barsShownKey.current = key;
-        setBars((m) => ({ data: keepPrevIfEqual(m.data, d), error: false }));
+        setBars((m) => ({ data: keepPrevIfEqual(m.data, d), error: false, rankFor }));
       })
       .catch(() => {
         if (cancelled) return;
-        setBars((m) => (m.data && barsShownKey.current === key ? m : { data: null, error: true }));
+        setBars((m) => (m.data && barsShownKey.current === key ? m : { data: null, error: true, rankFor: null }));
       });
     return () => {
       cancelled = true;

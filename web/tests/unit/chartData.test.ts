@@ -54,21 +54,42 @@ describe("ownerHighlight", () => {
   });
 
   it("highlights nothing without a selected owner", () => {
-    expect(ownerHighlight(bars(), null)).toEqual({ highlight: null, extra: null });
+    expect(ownerHighlight(bars(), null, null)).toEqual({ highlight: null, extra: null });
   });
 
   it("highlights a ranked row in place", () => {
-    expect(ownerHighlight(bars(), "PRC")).toEqual({ highlight: "PRC", extra: null });
+    expect(ownerHighlight(bars(), "PRC", "PRC")).toEqual({ highlight: "PRC", extra: null });
   });
 
   it("adds an extra row with the rank for an owner outside the ranked rows", () => {
-    const r = ownerHighlight(bars({ rank_of: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } }), "GER");
+    const r = ownerHighlight(bars({ rank_of: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } }), "GER", "GER");
     expect(r).toEqual({ highlight: "GER", extra: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } });
   });
 
   it("an owner with none under the filters gets an empty extra row", () => {
-    expect(ownerHighlight(bars({ rank_of: null }), "GER")).toEqual({
+    expect(ownerHighlight(bars({ rank_of: null }), "GER", "GER")).toEqual({
       highlight: "GER", extra: { key: "GER", rank: null, counts: {}, total: 0 },
     });
+  });
+
+  it("shows no extra row while the data was fetched for a different owner (rank_of present but stale)", () => {
+    // Germany's rank_of is still in the response while UAE is now selected — must not show
+    // Germany's rank under UAE's name, and must not show UAE with no data either.
+    const r = ownerHighlight(bars({ rank_of: { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 } }), "UAE", "GER");
+    expect(r).toEqual({ highlight: "UAE", extra: null });
+  });
+
+  it("shows no extra row while the data was fetched for a different owner (rank_of null/stale)", () => {
+    // rank_of: null for Germany (confirmed zero for Germany) must not be misread as "UAE has
+    // none" just because UAE is now selected and the response hasn't caught up yet.
+    const r = ownerHighlight(bars({ rank_of: null }), "UAE", "GER");
+    expect(r).toEqual({ highlight: "UAE", extra: null });
+  });
+
+  it("shows no extra row for a first-ever selection before its rank_of has been fetched", () => {
+    // Picking Germany when no owner was selected before: the response on screen never asked for
+    // any rank_of (rankFor is null), so there's nothing to show yet — not a false "none".
+    const r = ownerHighlight(bars(), "GER", null);
+    expect(r).toEqual({ highlight: "GER", extra: null });
   });
 });

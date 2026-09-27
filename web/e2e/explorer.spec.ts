@@ -738,6 +738,28 @@ test("the Owners chart ranks all owners and highlights the selected one, with it
   expect(breakdownOwners.every((o) => o === null)).toBe(true);
 });
 
+test("shows no false 'none under these filters' row while a newly selected owner's rank is still loading", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  await page.route("**/api/stats/breakdown**", async (route) => {
+    const u = new URL(route.request().url());
+    const body = JSON.parse(fx("api/breakdown.json").toString());
+    if (u.searchParams.get("rank_of") === "GER") {
+      await new Promise((r) => setTimeout(r, 600));
+      body.rank_of = { key: "GER", rank: 9, counts: { PAY: 86 }, total: 86 };
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).fill("germany");
+  await page.getByRole("option", { name: /^🇩🇪 Germany/ }).click();
+  // The bars still on screen were fetched before Germany was selected (rank_of never asked for
+  // it) — while Germany's own (delayed) response is in flight, there must be no extra row at all
+  // for it, not a false "Germany #— 0" claiming it has none under these filters.
+  await expect(page.locator('[data-row="GER"]')).toHaveCount(0);
+  await expect(page.locator('[data-row="GER"]')).toContainText("#9", { timeout: 5_000 });
+});
+
 test("selecting an owner does not replay the ranked bars' entrance animation", async ({ page }) => {
   await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
   // The ranked rows (US, PRC, _other) never change; only `rank_of` (and so the response body,

@@ -12,7 +12,18 @@ import { labelColumn, tooltipPosition } from "@/components/charts/scales";
 const KEYS: ObjectType[] = TYPE_ORDER;
 const M = { t: 8, r: 60, b: 8 };
 
-export function BarChart({ data, owners, selected = null }: { data: BreakdownResponse; owners: OwnerSummary[]; selected?: string | null }) {
+export function BarChart({
+  data,
+  owners,
+  selected = null,
+  rankFor = null,
+}: {
+  data: BreakdownResponse;
+  owners: OwnerSummary[];
+  selected?: string | null;
+  /** The owner `data` actually asked `rank_of` for — see chartData.ts's ownerHighlight. */
+  rankFor?: string | null;
+}) {
   const wrap = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -35,7 +46,7 @@ export function BarChart({ data, owners, selected = null }: { data: BreakdownRes
     }
   }, [tip]);
 
-  const { highlight, extra } = ownerHighlight(data, selected);
+  const { highlight, extra } = ownerHighlight(data, selected, rankFor);
   const ranked = data.rows.slice(0, 6);
   const rows = extra ? [...ranked, extra] : ranked;
   const tooltipLabels = rows.map((r) => ownerLabel(r.key, owners));

@@ -15,7 +15,11 @@ import { SearchBox } from "@/components/panels/SearchBox";
 import { Unavailable } from "@/components/ui/Unavailable";
 
 export type Load<T> = { data: T | null; error: boolean };
-export type PanelCtx = { meta: Load<Meta>; ts: Load<TimeseriesResponse>; bars: Load<BreakdownResponse> };
+// The owner `bars.data` actually asked `rank_of` for, alongside it (not derived from the current
+// selection, which can change before a slower response for a previous owner arrives) — see
+// chartData.ts's ownerHighlight and page.tsx's breakdown fetch.
+export type BarsLoad = Load<BreakdownResponse> & { rankFor: string | null };
+export type PanelCtx = { meta: Load<Meta>; ts: Load<TimeseriesResponse>; bars: BarsLoad };
 
 function HistoryScope() {
   const types = useExplorer((s) => s.types);
@@ -34,7 +38,9 @@ function OwnersChart({ c }: { c: PanelCtx }) {
       <h3 className="font-mono text-[16px] text-ink">Who owns what&apos;s up there</h3>
       <p data-testid="owners-scope" className="mt-1 text-[12px] text-ink-3">{ownersChartScope({ types, owners: [], orbits })}</p>
       <div className="mt-2">
-        {c.bars.error ? <Unavailable what="owners" /> : c.bars.data && <BarChart data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} />}
+        {c.bars.error ? <Unavailable what="owners" /> : c.bars.data && (
+          <BarChart data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} rankFor={c.bars.rankFor} />
+        )}
       </div>
     </div>
   );
