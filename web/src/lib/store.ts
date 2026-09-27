@@ -109,8 +109,14 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
       // Re-selecting the object already on screen (e.g. clicking its search result again while
       // its card is open) must not replay the fly-to arc — only reopen the pending wait when the
       // last attempt came up "absent" (a natural retry point; GlobeScene's per-frame check runs
-      // again from there).
-      if (id === s.selectedId) return s.selectionOnGlobe === "absent" ? { selectionOnGlobe: "pending" } : s;
+      // again from there). Still reveals Search like a fresh selection does: its card is where the
+      // retry (or the object's details) shows, which must come back even if the panel was closed
+      // since the last time this same object was selected.
+      if (id === s.selectedId) {
+        const panels = { ...s.panels, search: true };
+        saveVisibility(browserStorage(), panels);
+        return s.selectionOnGlobe === "absent" ? { selectionOnGlobe: "pending", panels } : { panels };
+      }
       return { selectedId: id, selectionOnGlobe: "pending", panels: { ...s.panels, search: true } };
     }),
   setPanel: (id, shown) =>

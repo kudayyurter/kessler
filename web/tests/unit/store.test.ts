@@ -59,6 +59,13 @@ describe("panel visibility in the store", () => {
     useExplorer.getState().select(25544);
     expect(useExplorer.getState().panels.search).toBe(true);
   });
+
+  it("re-selecting the same object still reveals the search panel", () => {
+    useExplorer.getState().select(25544);
+    useExplorer.getState().setPanel("search", false);
+    useExplorer.getState().select(25544);
+    expect(useExplorer.getState().panels.search).toBe(true);
+  });
 });
 
 describe("mobile sheet open state", () => {
