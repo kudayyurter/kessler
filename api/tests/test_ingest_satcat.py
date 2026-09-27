@@ -75,9 +75,9 @@ def test_run_ingest_satcat_writes_objects_and_logs(conn):
     assert conn.execute("SELECT count(*) AS n FROM objects").fetchone()["n"] == 20
     fy = conn.execute("SELECT * FROM objects WHERE norad_id = 29733").fetchone()
     assert fy["event_id"] == "fengyun-1c-2007"
-    # Unknown owner codes are created on the fly with name = code.
+    # Known owner codes are loaded from seed with their proper names.
     por = conn.execute("SELECT name FROM owners WHERE code = 'POR'").fetchone()
-    assert por["name"] == "POR"
+    assert por["name"] == "Portugal"
     run = conn.execute("SELECT * FROM ingest_runs ORDER BY id DESC LIMIT 1").fetchone()
     assert (run["job"], run["source"], run["status"], run["rows"]) == (
         "ingest_satcat", "celestrak", "ok", 20,

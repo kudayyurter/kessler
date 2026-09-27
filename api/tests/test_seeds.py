@@ -1,4 +1,26 @@
-from app.seeds import load_seeds
+import csv
+import re
+
+from app.seeds import SEED_DIR, load_seeds
+
+
+def _owners() -> list[dict[str, str]]:
+    with open(SEED_DIR / "owners.csv", newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def test_every_owner_has_a_proper_name():
+    rows = _owners()
+    codes = [r["code"] for r in rows]
+    assert len(codes) == len(set(codes)) == 131
+    assert all(r["name"].strip() and r["name"] != r["code"] for r in rows)
+    assert {"ABS", "AC", "FGER", "SVK", "KWT", "JOR", "UGA", "VAT"} <= set(codes)
+
+
+def test_owner_flags_use_two_letter_country_codes():
+    for r in _owners():
+        if r["country_iso"]:
+            assert re.fullmatch(r"[A-Z]{2}", r["country_iso"]), r
 
 
 def test_load_seeds_is_idempotent_and_complete(conn):

@@ -20,7 +20,7 @@ GLOB,Globalstar,
 SKOR,South Korea,KR
 AUS,Australia,AU
 ARGN,Argentina,AR
-SES,SES,
+SES,SES S.A.,
 ISRA,Israel,IL
 EUTE,Eutelsat,
 TURK,Turkey,TR
@@ -46,3 +46,87 @@ SAUD,Saudi Arabia,SA
 AB,Arabsat,
 NKOR,North Korea,KP
 UNK,Unknown,
+EGYP,Egypt,EG
+THAI,Thailand,TH
+MALA,Malaysia,MY
+SWED,Sweden,SE
+PAKI,Pakistan,PK
+POR,Portugal,PT
+BEL,Belgium,BE
+MEX,Mexico,MX
+DEN,Denmark,DK
+ABS,Asia Broadcast Satellite,
+AC,AsiaSat (Asia Satellite Telecommunications),
+ALG,Algeria,DZ
+NATO,North Atlantic Treaty Organization,
+CZCH,Czech Republic (former Czechoslovakia),CZ
+RWA,Rwanda,RW
+BUL,Bulgaria,BG
+UKR,Ukraine,UA
+KAZ,Kazakhstan,KZ
+NIG,Nigeria,NG
+HUN,Hungary,HU
+CHLE,Chile,CL
+VTNM,Vietnam,VN
+ASRA,Austria,AT
+BELA,Belarus,BY
+AZER,Azerbaijan,AZ
+MA,Morocco,MA
+SAFR,South Africa,ZA
+RP,Philippines,PH
+VENZ,Venezuela,VE
+LTU,Lithuania,LT
+PERU,Peru,PE
+SVK,Slovakia,SK
+KWT,Kuwait,KW
+SVN,Slovenia,SI
+ANG,Angola,AO
+ECU,Ecuador,EC
+FGER,France/Germany,
+FRIT,France/Italy,
+RASC,RascomStar-QAF,
+STCT,Singapore/Taiwan,
+COL,Colombia,CO
+BGD,Bangladesh,BD
+DJI,Djibouti,DJ
+EST,Estonia,EE
+ROM,Romania,RO
+BHR,Bahrain,BH
+BOL,Bolivia,BO
+BWA,Botswana,BW
+ETH,Ethiopia,ET
+GRSA,Greece/Saudi Arabia,
+HRV,Croatia,HR
+IRAQ,Iraq,IQ
+JOR,Jordan,JO
+LAOS,Laos,LA
+MNE,Montenegro,ME
+NICO,New ICO,
+SLB,Solomon Islands,SB
+TMMC,Turkmenistan/Monaco,
+URY,Uruguay,UY
+USBZ,United States/Brazil,
+ESRO,European Space Research Organization,
+KEN,Kenya,KE
+SGJP,Singapore/Japan,
+ZWE,Zimbabwe,ZW
+ARM,Armenia,AM
+BHUT,Bhutan,BT
+CRI,Costa Rica,CR
+GHA,Ghana,GH
+GUAT,Guatemala,GT
+IRL,Ireland,IE
+LKA,Sri Lanka,LK
+MCO,Monaco,MC
+MDA,Moldova,MD
+MMR,Myanmar,MM
+MNG,Mongolia,MN
+MUS,Mauritius,MU
+NPL,Nepal,NP
+PRY,Paraguay,PY
+QAT,Qatar,QA
+SDN,Sudan,SD
+SEN,Senegal,SN
+TUN,Tunisia,TN
+UGA,Uganda,UG
+VAT,Vatican City,VA
