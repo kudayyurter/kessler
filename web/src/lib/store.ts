@@ -37,8 +37,12 @@ interface ExplorerState extends Filters {
   setMobileSheetOpen: (open: boolean) => void;
   setMobileSheetTop: (top: number | null) => void;
   setTopBarBottom: (bottom: number | null) => void;
-  setDataVersion: (v: number) => void;
-  setDataGeneration: (g: string | undefined) => void;
+  // Publishes a newly swapped-in generation: updates dataVersion and dataGeneration together, and
+  // only when `version` actually differs from the stored dataVersion. Without that guard, the
+  // first load's pointer (which sets `generation` while `version` is still 0) would still publish
+  // a dataGeneration change on its own, and page.tsx's effects (keyed on both) would re-run with
+  // an identical URL — see GlobeSection.tsx.
+  setData: (version: number, generation: string | undefined) => void;
   reset: () => void;
 }
 
@@ -86,8 +90,8 @@ export const useExplorer = create<ExplorerState>((set) => ({
   setMobileSheetOpen: (mobileSheetOpen) => set({ mobileSheetOpen }),
   setMobileSheetTop: (mobileSheetTop) => set({ mobileSheetTop }),
   setTopBarBottom: (topBarBottom) => set({ topBarBottom }),
-  setDataVersion: (dataVersion) => set({ dataVersion }),
-  setDataGeneration: (dataGeneration) => set({ dataGeneration }),
+  setData: (version, generation) =>
+    set((s) => (version === s.dataVersion ? s : { dataVersion: version, dataGeneration: generation })),
   reset: () => set(initial()),
 }));
 

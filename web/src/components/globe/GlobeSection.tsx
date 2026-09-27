@@ -63,8 +63,7 @@ export function GlobeSection() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
   const setTopBarBottom = useExplorer((s) => s.setTopBarBottom);
-  const setDataVersion = useExplorer((s) => s.setDataVersion);
-  const setDataGeneration = useExplorer((s) => s.setDataGeneration);
+  const setData = useExplorer((s) => s.setData);
   const orbits = useExplorer((s) => s.orbits);
   const globe = useGlobeData(orbits.high);
   const leoStatus = globe.groups.LEO.status;
@@ -82,12 +81,12 @@ export function GlobeSection() {
 
   // Lets the page re-fetch the overview and charts when a newer generation is swapped in. The
   // generation string travels with the version number so those refetches can bust the CDN's
-  // cache (see store.ts's `dataGeneration`); both are set together so a page effect that reads
-  // both never sees one update without the other.
+  // cache (see store.ts's `dataGeneration`); setData only publishes when `version` itself
+  // changes, so the first load's pointer (which sets `generation` while `version` is still 0)
+  // doesn't trigger a redundant refetch of the page's own first-load requests.
   useEffect(() => {
-    setDataVersion(globe.version);
-    setDataGeneration(globe.generation);
-  }, [globe.version, globe.generation, setDataVersion, setDataGeneration]);
+    setData(globe.version, globe.generation);
+  }, [globe.version, globe.generation, setData]);
 
   // webglcontextlost is a native browser event (GPU reset, driver crash, too many contexts),
   // not a thrown error, so GlobeErrorBoundary can't see it — listen on the canvas directly and

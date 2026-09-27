@@ -100,13 +100,18 @@ describe("top bar measured bottom", () => {
   });
 });
 
-describe("dataVersion", () => {
-  it("starts at 0, is set by setDataVersion and cleared by reset", () => {
+describe("setData", () => {
+  it("does nothing at version 0 (nothing to publish on the first load), and sets both together once the version changes", () => {
     useExplorer.getState().reset();
     expect(useExplorer.getState().dataVersion).toBe(0);
-    useExplorer.getState().setDataVersion(3);
-    expect(useExplorer.getState().dataVersion).toBe(3);
+    useExplorer.getState().setData(0, "g1");
+    expect(useExplorer.getState().dataVersion).toBe(0);
+    expect(useExplorer.getState().dataGeneration).toBeUndefined();
+    useExplorer.getState().setData(1, "g1");
+    expect(useExplorer.getState().dataVersion).toBe(1);
+    expect(useExplorer.getState().dataGeneration).toBe("g1");
     useExplorer.getState().reset();
     expect(useExplorer.getState().dataVersion).toBe(0);
+    expect(useExplorer.getState().dataGeneration).toBeUndefined();
   });
 });
