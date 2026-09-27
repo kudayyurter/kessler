@@ -584,9 +584,16 @@ test("open owner options stay visible on the phone sheet too, not just clipped b
   await page.goto("/");
   await page.getByRole("tab", { name: "Filters" }).click();
   const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  // With the field already near the bottom of the sheet's own scrolling tab panel (as it would be
+  // with more content above it, or after the user scrolls down), the absolutely-positioned list
+  // used to render mostly below the panel's clipped edge — genuinely covered by only a sliver, not
+  // just failing a naive "some pixel is on screen" check (which the panel's clipping doesn't even
+  // affect: a 0-height scrollIntoView + a lenient default toBeInViewport() would pass either way).
+  await ownerInput.evaluate((el) => el.scrollIntoView({ block: "end" }));
+  await ownerInput.click();
   await ownerInput.fill("ger");
   const option = page.getByRole("option", { name: /Germany/ }).first();
-  await expect(option).toBeInViewport();
+  await expect(option).toBeInViewport({ ratio: 0.5 });
   await option.click();
   await expect(ownerInput).toHaveValue("🇩🇪 Germany");
 });
