@@ -16,6 +16,11 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
   const setOpen = useExplorer((s) => s.setMobileSheetOpen);
   const setSheetTop = useExplorer((s) => s.setMobileSheetTop);
   const panelRequest = useExplorer((s) => s.panelRequest);
+  // The request already pending at mount (e.g. the sheet remounting on a tablet rotation, while a
+  // stale request from before it unmounted is still sitting in the store) must not replay — only
+  // react to a *later* one, i.e. a bigger `n` than whatever was already there when this instance
+  // of the sheet appeared.
+  const seenRequestN = useRef(panelRequest?.n ?? 0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,10 +35,11 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
   }, [selectedId, setOpen]);
 
   useEffect(() => {
-    if (!panelRequest) return;
+    if (!panelRequest || panelRequest.n <= seenRequestN.current) return;
+    seenRequestN.current = panelRequest.n;
     // Reacting to an external request (the filter summary's "open Filters"), same justification as
-    // the selection effect above.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // the selection effect above (the early return above means eslint no longer treats this as an
+    // unconditional set-state-in-effect, so it needs no disable comment).
     setActive(panelRequest.id);
     setOpen(true);
   }, [panelRequest, setOpen]);

@@ -20,6 +20,23 @@ function metaWithOwners(): string {
   return JSON.stringify(meta);
 }
 
+// A long enough owner list that the "A–Z" run overflows the picker's max-h-64 list — needed to
+// actually exercise "scroll the active option into view", which a handful of owners wouldn't.
+function metaWithManyOwners(): string {
+  const meta = JSON.parse(fx("api/meta.json").toString());
+  for (let i = 0; i < 24; i++) {
+    meta.owners.push({ code: `X${i}`, name: `Zzz Owner ${String(i).padStart(2, "0")}`, flag_emoji: null, in_orbit: 0, total: 0 });
+  }
+  return JSON.stringify(meta);
+}
+
+// A single owner with a 50-character name, for the summary pill's truncation/overflow test.
+function metaWithLongOwnerName(): string {
+  const meta = JSON.parse(fx("api/meta.json").toString());
+  meta.owners.push({ code: "LONG", name: "Z".repeat(50), flag_emoji: null, in_orbit: 5, total: 5 });
+  return JSON.stringify(meta);
+}
+
 // Builds a LEO snapshot fixture for a second generation: same records, a different publish time
 // in its header. Same length in, same length out keeps the header's byte-length field and record
 // alignment valid, so this is a plain byte-level patch, not a re-encode. Used by the swap test
@@ -544,16 +561,61 @@ test("the owner picker finds any owner by typing and filters History", async ({ 
   });
   await page.goto("/");
   await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
-  // getByLabel("Owner") alone is ambiguous here: it also substring-matches the (unrelated, always
-  // shown) Owners panel's region label, its "Hide Owners" button, and the Owners chart's alt text
-  // — scope to the Filters panel, as the Search-panel Retry lookup above does for the same reason.
-  const ownerInput = page.locator('[data-panel="filters"]').getByLabel("Owner");
+  // A combobox's accessible name is sturdier than a panel-scoped getByLabel: there's exactly one
+  // combobox on the page, so this doesn't depend on the Owners panel's own (unrelated) labels.
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
   await ownerInput.fill("ger");
+  const option = page.getByRole("option", { name: /Germany/ }).first();
+  // The list used to render absolutely positioned inside the (overflow-y-auto) desktop column,
+  // which clipped it below the fold; Playwright's own auto-scroll masked that in round 1's test.
+  // It now renders in normal flow and scrolls itself into view, so this must hold without any
+  // scrolling this test does itself.
   await expect(page.getByRole("option")).toHaveCount(2);
-  await page.getByRole("option", { name: /Germany/ }).first().click();
+  await expect(option).toBeInViewport();
+  await option.click();
   await expect.poll(() => ownersParams.at(-1)).toBe("GER");
   await expect(ownerInput).toHaveValue("🇩🇪 Germany");
   await expect(page.getByTestId("filter-summary")).toContainText("🇩🇪 Germany");
+});
+
+test("open owner options stay visible on the phone sheet too, not just clipped by Playwright's auto-scroll", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.fill("ger");
+  const option = page.getByRole("option", { name: /Germany/ }).first();
+  await expect(option).toBeInViewport();
+  await option.click();
+  await expect(ownerInput).toHaveValue("🇩🇪 Germany");
+});
+
+test("holding ArrowDown scrolls the highlighted option into view", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithManyOwners() } });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.click();
+  for (let i = 0; i < 20; i++) await page.keyboard.press("ArrowDown");
+  const activeId = await ownerInput.getAttribute("aria-activedescendant");
+  expect(activeId).toBeTruthy();
+  await expect(page.locator(`#${activeId}`)).toBeInViewport();
+});
+
+test("selecting an owner then typing right away starts a fresh search, not the stale label plus a keystroke", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.click();
+  await ownerInput.pressSequentially("china");
+  await page.keyboard.press("Enter");
+  await expect(ownerInput).toHaveValue("🇨🇳 China");
+  // Selecting via Enter/click leaves focus in the box, so this keystroke arrives with the box
+  // still showing "🇨🇳 China" — it must not search for "🇨🇳 Chinag" (unmatchable) and then "ger".
+  await page.keyboard.type("ger");
+  await expect(page.getByRole("option", { name: /Germany/ }).first()).toBeVisible();
 });
 
 test("the filter summary appears when filters change and Reset restores the defaults", async ({ page }) => {
@@ -568,4 +630,20 @@ test("the filter summary appears when filters change and Reset restores the defa
   await summary.getByRole("button", { name: "Reset filters" }).click();
   await expect(summary).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Higher orbits" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("a long owner name doesn't overflow the page or make the summary pill more than two lines tall", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithLongOwnerName() } });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Filters" }).click();
+  const ownerInput = page.getByRole("combobox", { name: "Owner" });
+  await ownerInput.fill("Z");
+  await page.getByRole("option", { name: /^Z{50}/ }).first().click();
+  const summary = page.getByTestId("filter-summary");
+  await expect(summary).toContainText("ZZZ");
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(320);
+  const box = (await summary.boundingBox())!;
+  expect(box.height).toBeLessThanOrEqual(64);
 });
