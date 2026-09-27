@@ -99,10 +99,13 @@ export function GlobeScene({
   // object (see the store's `select`) can bounce `selectionOnGlobe` back to "pending" without
   // `selectedId` changing, so the cleanup effect below never runs for it — without this, the
   // previous tween would keep animating alongside a second one, and whichever finished first would
-  // clear `fly.current`/resume controls out from under the other. `live` (not the returned handle)
-  // guards the completion callback against firing for a flight that's no longer the current one:
-  // it can't compare against the handle itself, because flyTo's reduced-motion path calls this
-  // callback synchronously, before flyTo has returned a handle to capture.
+  // clear `fly.current`/resume controls out from under the other. `live` marks whether THIS
+  // flight's completion callback has already run (once, idempotently) or been cancelled — it
+  // can't be a comparison against the returned handle itself, because flyTo's reduced-motion path
+  // calls this callback synchronously, before flyTo has returned a handle to capture. The stored
+  // handle's own `cancel` also flips `live` to false, so cancelling (from the next `startFlight`
+  // call, or the cleanup effect below) reliably stops a stale completion from running even if the
+  // underlying tween's own cancellation doesn't guarantee that on its own.
   const startFlight = useCallback(
     (found: THREE.Vector3) => {
       fly.current?.cancel();
@@ -116,7 +119,7 @@ export function GlobeScene({
         resumeControls();
       });
       // Reduced motion already ran the callback above, synchronously — nothing left to store.
-      if (live) fly.current = handle;
+      if (live) fly.current = { cancel: () => { live = false; handle.cancel(); } };
     },
     [camera, resumeControls],
   );
