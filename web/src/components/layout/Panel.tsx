@@ -9,13 +9,20 @@ export function Panel({ id, title, children, className = "" }: { id: PanelId; ti
   const setPanel = useExplorer((s) => s.setPanel);
   const panelRequest = useExplorer((s) => s.panelRequest);
   const ref = useRef<HTMLElement>(null);
+  // The request already pending when this instance mounts (e.g. this panel's column remounting
+  // on a desktop/sheet layout switch, while a request from before it unmounted is still sitting
+  // in the store) must not replay — only react to a *later* one, i.e. a bigger `n` than whatever
+  // was already there at mount. Same pattern as MobileSheet's own panelRequest effect.
+  const seenRequestN = useRef(panelRequest?.n ?? 0);
 
   // openPanel only ever *shows* a panel; if it was already shown but scrolled out of its column
   // (desktop only — the phone sheet has no scrolling column, see MobileSheet's own panelRequest
   // effect), nothing else would visibly happen when "Showing …" is clicked again. Keyed on
   // `panelRequest.n`, not just its presence, so every request re-scrolls even if the id repeats.
   useEffect(() => {
-    if (panelRequest?.id === id) ref.current?.scrollIntoView({ block: "nearest" });
+    if (!panelRequest || panelRequest.id !== id || panelRequest.n <= seenRequestN.current) return;
+    seenRequestN.current = panelRequest.n;
+    ref.current?.scrollIntoView({ block: "nearest" });
   }, [panelRequest, id]);
 
   if (!shown) return null;

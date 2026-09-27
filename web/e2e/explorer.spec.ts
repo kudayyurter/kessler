@@ -427,6 +427,41 @@ test("a panel hides with × and comes back from the dock, across reloads", async
   await expect(page.locator('[data-panel="history"]')).toBeVisible();
 });
 
+test("a panel's own remount (crossing the sheet/desktop breakpoint) does not replay its last scroll request", async ({ page }) => {
+  // Panel's <section> stays mounted (rendering null) while merely hidden/shown via the dock —
+  // it only truly unmounts and remounts when the desktop column itself does, i.e. a layout
+  // switch (see page.tsx's `sheet !== true` branch and MobileSheet's own identical remount
+  // concern). Spies on scrollIntoView so this can assert on whether the effect fired, rather than
+  // on fragile pixel positions.
+  await page.addInitScript(() => {
+    (window as unknown as { __scrollCalls: string[] }).__scrollCalls = [];
+    const orig = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = function (this: HTMLElement, ...args: Parameters<typeof orig>) {
+      (window as unknown as { __scrollCalls: string[] }).__scrollCalls.push(this.getAttribute("data-panel") ?? this.tagName);
+      return orig.apply(this, args);
+    };
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  // The summary pill's own button (openPanel) is a legitimate scroll request.
+  await page.getByTestId("filter-summary").getByRole("button", { name: /^Showing/ }).click();
+  const countFilters = () => page.evaluate(() => (window as unknown as { __scrollCalls: string[] }).__scrollCalls.filter((id) => id === "filters").length);
+  const callsAfterOpen = await countFilters();
+  expect(callsAfterOpen).toBeGreaterThan(0);
+  // Cross the breakpoint (desktop -> sheet -> desktop): the desktop columns' Panel instances are
+  // destroyed and rebuilt fresh, while `panelRequest` in the store is untouched — still the same
+  // already-served request. The rebuilt Filters instance must not replay it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByTestId("mobile-sheet")).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await expect(page.locator('[data-panel="filters"]')).toBeVisible();
+  const callsAfterRemount = await countFilters();
+  expect(callsAfterRemount).toBe(callsAfterOpen);
+});
+
 test("hiding all panels leaves the dock to restore them", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
