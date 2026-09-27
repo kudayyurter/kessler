@@ -16,7 +16,7 @@ export function ownerDisplay(o: OwnerSummary): string {
   return `${o.flag_emoji ?? ""} ${o.name}`.trim();
 }
 
-const byInOrbit = (a: OwnerSummary, b: OwnerSummary) => b.in_orbit - a.in_orbit || a.name.localeCompare(b.name);
+const byInOrbit = (a: OwnerSummary, b: OwnerSummary) => b.in_orbit - a.in_orbit || a.name.localeCompare(b.name, "en", { sensitivity: "base" });
 const byName = (a: OwnerSummary, b: OwnerSummary) => a.name.localeCompare(b.name, "en", { sensitivity: "base" });
 
 function option(o: OwnerSummary, group: string, heading?: string): PickerOption {

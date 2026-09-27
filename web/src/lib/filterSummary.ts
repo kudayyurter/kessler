@@ -1,4 +1,5 @@
 import { OBJECT_TYPES, type ObjectType, type OwnerSummary } from "@/lib/types";
+import { ownerDisplay } from "@/lib/ownerPicker";
 
 export type Orbits = { leo: boolean; high: boolean };
 export interface FilterState {
@@ -24,7 +25,7 @@ export function typesText(types: readonly ObjectType[]): string {
 export function ownerText(owners: readonly string[], list: readonly OwnerSummary[]): string {
   if (owners.length === 0) return "All owners";
   const o = list.find((x) => x.code === owners[0]);
-  return o ? `${o.flag_emoji ?? ""} ${o.name}`.trim() : owners[0];
+  return o ? ownerDisplay(o) : owners[0];
 }
 
 /** "Higher orbits · 🇺🇸 United States · 3 of 4 types" — the summary pill and the History scope line. */
