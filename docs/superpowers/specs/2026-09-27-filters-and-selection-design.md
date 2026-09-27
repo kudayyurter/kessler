@@ -52,8 +52,8 @@ owner during this design).
   - With an owner selected: its bar is outlined, its label and number are bright, the other rows are dimmed to about a
     third.
   - If the selected owner is not among the ranked rows (top 5 + Other), a divider and an extra row show it with its rank,
-    e.g. "🇩🇪 Germany #9", from one extra breakdown request filtered to that owner (plus its rank — see API). "Other" still
-    counts it; the extra row is a highlight, not a second count.
+    e.g. "🇩🇪 Germany #9", from the same breakdown request's `rank_of` (see API). "Other" still counts it; the extra row
+    is a highlight, not a second count. An owner with no objects under the filters gets the row with "—" and 0.
 - **History scope line** under its subtitle: `<orbits> · <owner> · <types>` (e.g. "Higher orbits · United States · 3 of 4
   types"; default "Low Earth orbit · All owners · all types").
 - **Filter summary pill** in the globe's control bar next to the status pill (in the phone top bar in the sheet layout):
