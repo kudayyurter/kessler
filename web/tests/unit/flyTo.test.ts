@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { findPosition, shortestAngle } from "@/components/globe/flyTo";
+import { locate, shortestAngle, type Locator } from "@/components/globe/flyTo";
 
 describe("shortestAngle", () => {
   it("goes the short way round the globe", () => {
@@ -10,25 +10,28 @@ describe("shortestAngle", () => {
   });
 });
 
-describe("findPosition", () => {
-  it("skips holes in a sparse locator list (e.g. a group whose snapshot hasn't loaded)", () => {
-    const target = new THREE.Vector3(1, 2, 3);
-    const locators = [undefined, (id: number) => (id === 42 ? target : null)];
-    expect(findPosition(locators, 42)).toBe(target);
+describe("locate", () => {
+  const at = new THREE.Vector3(1, 2, 3);
+  const has = (id: number): Locator => (x) => (x === id ? at : "absent");
+  const notYet = (id: number): Locator => (x) => (x === id ? "pending" : "absent");
+
+  it("returns the position from whichever expected group has it", () => {
+    expect(locate([has(5), has(9)], [0, 1], 9)).toBe(at);
   });
 
-  it("returns the first locator's non-null hit, skipping ones that miss", () => {
-    const leo = new THREE.Vector3(1, 0, 0);
-    const high = new THREE.Vector3(0, 1, 0);
-    const locators = [
-      (id: number) => (id === 1 ? leo : null),
-      (id: number) => (id === 2 ? high : null),
-    ];
-    expect(findPosition(locators, 2)).toBe(high);
+  it("waits while the object's group hasn't computed positions yet", () => {
+    expect(locate([notYet(5)], [0], 5)).toBe("pending");
   });
 
-  it("returns null when nothing matches, including all-holes", () => {
-    expect(findPosition([undefined, undefined], 7)).toBeNull();
-    expect(findPosition([(id: number) => (id === 1 ? new THREE.Vector3() : null)], 7)).toBeNull();
+  it("a group that hasn't loaded keeps it pending", () => {
+    expect(locate([has(5), undefined], [0, 1], 9)).toBe("pending");
+  });
+
+  it("is absent only when every expected group is loaded and none has it", () => {
+    expect(locate([has(5), has(6)], [0, 1], 9)).toBe("absent");
+  });
+
+  it("ignores groups that aren't expected", () => {
+    expect(locate([has(5), has(9)], [0], 9)).toBe("absent");
   });
 });

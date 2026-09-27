@@ -11,7 +11,7 @@ import type { OrbitRecord } from "@/lib/snapshot";
 import { useExplorer } from "@/lib/store";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { Earth } from "@/components/globe/Earth";
-import { findPosition, flyTo, type Locator } from "@/components/globe/flyTo";
+import { flyTo, locate, type Locator } from "@/components/globe/flyTo";
 import { LabelDriver } from "@/components/globe/LabelDriver";
 import { Objects, type LabelSource } from "@/components/globe/Objects";
 import { Picker } from "@/components/globe/Picker";
@@ -56,7 +56,7 @@ export function GlobeScene({
   const topBarBottom = useExplorer((s) => s.topBarBottom);
   const sheetLayout = useIsMobile();
   // Sparse: index 0 = LEO, 1 = HIGH. A group whose snapshot hasn't loaded (or errored) yet
-  // leaves a hole here rather than a function — findPosition skips holes instead of calling them.
+  // leaves a hole here rather than a function — locate skips holes instead of calling them.
   const locators = useRef<(Locator | undefined)[]>([]);
   // Sparse by group index (0 = LEO, 1 = HIGH), same convention as `locators` above — fed by
   // Objects' onLabelSource and read every tick by LabelDriver.
@@ -86,8 +86,8 @@ export function GlobeScene({
 
   useEffect(() => {
     if (selectedId === null) return;
-    const p = findPosition(locators.current, selectedId);
-    if (!p) return;
+    const p = locate(locators.current, [0, 1], selectedId);
+    if (!(p instanceof THREE.Vector3)) return;
     // OrbitControls and the fly-to tween both write camera.position; hand off control to the
     // tween for its duration so they don't fight, then resync OrbitControls' internal state
     // (damping offset etc.) from wherever the camera ended up before handing control back.

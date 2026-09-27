@@ -7,6 +7,7 @@ import { earthRadiusPx } from "@/lib/camera";
 import { simClock } from "@/lib/clock";
 import type { OrbitRecord } from "@/lib/snapshot";
 import { isVisible, useExplorer } from "@/lib/store";
+import type { Locator } from "@/components/globe/flyTo";
 import { usePropagation, type PropagationFrames } from "@/components/globe/usePropagation";
 import { interpolate } from "@/components/globe/instances";
 import { applyFrame, artScale, buildObjectGeometry, dotScale, frameAlpha, lodFade, setVisibility } from "@/components/globe/objectPoints";
@@ -27,7 +28,7 @@ export function Objects({
 }: {
   records: OrbitRecord[];
   group: "LEO" | "HIGH";
-  onReady?: (positionOf: (noradId: number) => THREE.Vector3 | null) => void;
+  onReady?: (positionOf: Locator) => void;
   /** Whether the globe is visible/foregrounded — see GlobeSection/GlobeScene. Pauses the
    * propagation worker's tick interval while false. */
   active?: boolean;
@@ -76,8 +77,9 @@ export function Objects({
   useLayoutEffect(() => {
     onReady?.((noradId) => {
       const i = indexById.get(noradId);
+      if (i === undefined) return "absent";
       const v = new THREE.Vector3();
-      return i !== undefined && interpolate(frames.current, simClock.now(), i, v) ? v : null;
+      return interpolate(frames.current, simClock.now(), i, v) ? v : "pending";
     });
   }, [indexById, frames, onReady]);
 

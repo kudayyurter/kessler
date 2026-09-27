@@ -1,12 +1,16 @@
 import { create } from "zustand";
 import { browserStorage, DEFAULT_VISIBILITY, loadVisibility, saveVisibility, type PanelId } from "@/lib/panels";
-import { OBJECT_TYPES, type ObjectType, type Regime } from "@/lib/types";
+import { filtersToShow, type Findable, type GlobePresence } from "@/lib/selection";
+import { OBJECT_TYPES, type ObjectType, type OwnerSummary, type Regime } from "@/lib/types";
 
-type Orbits = { leo: boolean; high: boolean };
-type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits };
+export type Orbits = { leo: boolean; high: boolean };
+export type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits };
 
 interface ExplorerState extends Filters {
   selectedId: number | null;
+  // Where the selected object stands on the globe (see GlobeScene's pending fly-to); null when
+  // nothing is selected.
+  selectionOnGlobe: GlobePresence | null;
   panels: Record<PanelId, boolean>;
   // Whether the phone bottom sheet (see MobileSheet.tsx) is expanded. Lives here, not as local
   // component state, so GlobeScene (inside the <Canvas> tree, not a descendant of MobileSheet)
@@ -27,6 +31,11 @@ interface ExplorerState extends Filters {
   // starts at 0 in every tab) can still get pre-publication data back from cache; the page adds
   // this to those requests instead, once dataVersion says a swap actually happened.
   dataGeneration: string | undefined;
+  // The owners list from /meta, for components outside the page's panel context (the summary
+  // pill, chart scope lines) to name the selected owner.
+  ownerDirectory: OwnerSummary[];
+  // Bumped by openPanel so the phone sheet (MobileSheet) can switch to that tab.
+  panelRequest: { id: PanelId; n: number } | null;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -43,23 +52,44 @@ interface ExplorerState extends Filters {
   // a dataGeneration change on its own, and page.tsx's effects (keyed on both) would re-run with
   // an identical URL — see GlobeSection.tsx.
   setData: (version: number, generation: string | undefined) => void;
+  setSelectionOnGlobe: (p: GlobePresence) => void;
+  selectFromSearch: (o: Findable) => void;
+  resetFilters: () => void;
+  setOwnerDirectory: (list: OwnerSummary[]) => void;
+  openPanel: (id: PanelId) => void;
   reset: () => void;
 }
 
-const initial = (): Filters & Pick<ExplorerState, "selectedId" | "panels" | "mobileSheetOpen" | "mobileSheetTop" | "topBarBottom" | "dataVersion" | "dataGeneration"> => ({
+const initial = (): Filters &
+  Pick<
+    ExplorerState,
+    | "selectedId"
+    | "selectionOnGlobe"
+    | "panels"
+    | "mobileSheetOpen"
+    | "mobileSheetTop"
+    | "topBarBottom"
+    | "dataVersion"
+    | "dataGeneration"
+    | "ownerDirectory"
+    | "panelRequest"
+  > => ({
   types: [...OBJECT_TYPES],
   owners: [],
   orbits: { leo: true, high: false },
   selectedId: null,
+  selectionOnGlobe: null,
   panels: { ...DEFAULT_VISIBILITY },
   mobileSheetOpen: true,
   mobileSheetTop: null,
   topBarBottom: null,
   dataVersion: 0,
   dataGeneration: undefined,
+  ownerDirectory: [],
+  panelRequest: null,
 });
 
-export const useExplorer = create<ExplorerState>((set) => ({
+export const useExplorer = create<ExplorerState>((set, get) => ({
   ...initial(),
   toggleType: (t) =>
     set((s) => {
@@ -73,7 +103,12 @@ export const useExplorer = create<ExplorerState>((set) => ({
       const next = { ...s.orbits, [k]: !s.orbits[k] };
       return next.leo || next.high ? { orbits: next } : s;
     }),
-  select: (id) => set((s) => (id === null ? { selectedId: null } : { selectedId: id, panels: { ...s.panels, search: true } })),
+  select: (id) =>
+    set((s) =>
+      id === null
+        ? { selectedId: null, selectionOnGlobe: null }
+        : { selectedId: id, selectionOnGlobe: "pending", panels: { ...s.panels, search: true } },
+    ),
   setPanel: (id, shown) =>
     set((s) => {
       const panels = { ...s.panels, [id]: shown };
@@ -92,6 +127,23 @@ export const useExplorer = create<ExplorerState>((set) => ({
   setTopBarBottom: (topBarBottom) => set({ topBarBottom }),
   setData: (version, generation) =>
     set((s) => (version === s.dataVersion ? s : { dataVersion: version, dataGeneration: generation })),
+  setSelectionOnGlobe: (p) => set((s) => (s.selectedId === null ? s : { selectionOnGlobe: p })),
+  selectFromSearch: (o) => {
+    const changes = filtersToShow(o, get());
+    if (changes) set(changes);
+    get().select(o.norad_id);
+  },
+  resetFilters: () => {
+    const { types, owners, orbits } = initial();
+    set({ types, owners, orbits });
+  },
+  setOwnerDirectory: (ownerDirectory) => set({ ownerDirectory }),
+  openPanel: (id) =>
+    set((s) => {
+      const panels = { ...s.panels, [id]: true };
+      saveVisibility(browserStorage(), panels);
+      return { panels, panelRequest: { id, n: (s.panelRequest?.n ?? 0) + 1 } };
+    }),
   reset: () => set(initial()),
 }));
 

@@ -7,20 +7,30 @@ export function shortestAngle(from: number, to: number): number {
   return Math.atan2(Math.sin(d), Math.cos(d));
 }
 
-export type Locator = (id: number) => THREE.Vector3 | null;
+/** A group's answer for one object: its position, "pending" (in this group's data but no
+ * position computed yet), or "absent" (not in this group's data). */
+export type Found = THREE.Vector3 | "pending" | "absent";
+export type Locator = (id: number) => Found;
 
 /**
- * Finds the first non-null position across a set of locator functions, one per object group
- * (e.g. LEO, HIGH). The set can be sparse — a group whose snapshot hasn't loaded (or failed)
- * yet leaves a hole rather than a function — so holes are skipped instead of called.
+ * Looks for an object across the groups expected to be loaded (by index, e.g. [0] for LEO or
+ * [0, 1] for LEO and HIGH) in a sparse locator list, where a group that hasn't loaded (or failed)
+ * leaves a hole. Returns the first position found; "absent" only when every expected group is
+ * loaded and none has the object; otherwise "pending".
  */
-export function findPosition(locators: readonly (Locator | undefined)[], id: number): THREE.Vector3 | null {
-  for (const find of locators) {
-    if (!find) continue;
-    const p = find(id);
-    if (p) return p;
+export function locate(locators: readonly (Locator | undefined)[], expected: readonly number[], id: number): Found {
+  let pending = false;
+  for (const i of expected) {
+    const find = locators[i];
+    if (!find) {
+      pending = true;
+      continue;
+    }
+    const r = find(id);
+    if (r instanceof THREE.Vector3) return r;
+    if (r === "pending") pending = true;
   }
-  return null;
+  return pending ? "pending" : "absent";
 }
 
 /** Arcs the camera around the globe (never through it) to look at `target` from `distance`. */

@@ -115,3 +115,58 @@ describe("setData", () => {
     expect(useExplorer.getState().dataGeneration).toBeUndefined();
   });
 });
+
+describe("selection and filter actions", () => {
+  it("marks a new selection pending and clears it with the selection", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().select(7);
+    expect(useExplorer.getState().selectionOnGlobe).toBe("pending");
+    useExplorer.getState().setSelectionOnGlobe("shown");
+    expect(useExplorer.getState().selectionOnGlobe).toBe("shown");
+    useExplorer.getState().select(null);
+    expect(useExplorer.getState().selectionOnGlobe).toBeNull();
+    useExplorer.getState().setSelectionOnGlobe("absent");
+    expect(useExplorer.getState().selectionOnGlobe).toBeNull();
+  });
+
+  it("selectFromSearch shows the object first, then selects it", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().setOwners(["US"]);
+    useExplorer.getState().selectFromSearch({ norad_id: 42, object_type: "PAY", owner: "PRC", regime: "GEO", decayed: false });
+    const s = useExplorer.getState();
+    expect(s.orbits).toEqual({ leo: true, high: true });
+    expect(s.owners).toEqual([]);
+    expect(s.selectedId).toBe(42);
+    expect(s.selectionOnGlobe).toBe("pending");
+  });
+
+  it("resetFilters restores the default filters and keeps the selection", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().select(3);
+    useExplorer.getState().toggleOrbit("high");
+    useExplorer.getState().toggleType("DEB");
+    useExplorer.getState().setOwners(["US"]);
+    useExplorer.getState().resetFilters();
+    const s = useExplorer.getState();
+    expect(s.orbits).toEqual({ leo: true, high: false });
+    expect(s.types).toEqual(["PAY", "R/B", "DEB", "UNK"]);
+    expect(s.owners).toEqual([]);
+    expect(s.selectedId).toBe(3);
+  });
+
+  it("openPanel shows the panel and bumps a request the sheet can follow", () => {
+    useExplorer.getState().reset();
+    useExplorer.getState().openPanel("filters");
+    expect(useExplorer.getState().panels.filters).toBe(true);
+    expect(useExplorer.getState().panelRequest).toEqual({ id: "filters", n: 1 });
+    useExplorer.getState().openPanel("filters");
+    expect(useExplorer.getState().panelRequest).toEqual({ id: "filters", n: 2 });
+  });
+
+  it("keeps the owner directory", () => {
+    useExplorer.getState().reset();
+    const list = [{ code: "US", name: "United States", flag_emoji: "🇺🇸", in_orbit: 1, total: 1 }];
+    useExplorer.getState().setOwnerDirectory(list);
+    expect(useExplorer.getState().ownerDirectory).toBe(list);
+  });
+});
