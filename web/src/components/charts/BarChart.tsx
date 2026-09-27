@@ -2,7 +2,7 @@
 
 import { animate, stagger } from "animejs";
 import { scaleBand, scaleLinear } from "d3-scale";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ownerHighlight, ownerLabel, TYPE_ORDER } from "@/lib/chartData";
 import { fmtInt } from "@/lib/format";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -38,13 +38,20 @@ export function BarChart({ data, owners, selected = null }: { data: BreakdownRes
   const { highlight, extra } = ownerHighlight(data, selected);
   const ranked = data.rows.slice(0, 6);
   const rows = extra ? [...ranked, extra] : ranked;
-  const labels = rows.map((r) =>
-    extra && r === extra ? `${ownerLabel(r.key, owners)} #${extra.rank ?? "—"}` : ownerLabel(r.key, owners),
-  );
+  const tooltipLabels = rows.map((r) => ownerLabel(r.key, owners));
+  const labels = rows.map((r, i) => (extra && r === extra ? `${tooltipLabels[i]} #${extra.rank ?? "—"}` : tooltipLabels[i]));
   const { marginLeft, display } = labelColumn(labels, width);
   const H = Math.max(160, rows.length * 48 + M.t + M.b);
   const x = scaleLinear().domain([0, Math.max(1, ...rows.map((r) => r.total))]).range([marginLeft, width - M.r]);
   const y = scaleBand().domain(rows.map((r) => r.key)).range([M.t, H - M.b]).padding(0.38);
+
+  // Keyed on the ranked rows only (not `data` as a whole, and not `extra`): picking or changing
+  // the selected owner changes the breakdown request's `rank_of` param, which changes the
+  // response object even when the ranked rows themselves are byte-for-byte identical — that must
+  // not replay this entrance animation (only the highlight/dim/extra row should change). A newly
+  // appearing or changing extra row's own segments simply render at their laid-out size with no
+  // entrance animation, since they're not covered by this effect's reset+animate pass.
+  const rowsKey = useMemo(() => JSON.stringify(data.rows.slice(0, 6)), [data.rows]);
 
   useEffect(() => {
     const el = svg.current;
@@ -61,7 +68,7 @@ export function BarChart({ data, owners, selected = null }: { data: BreakdownRes
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [data]);
+  }, [rowsKey]);
 
   const tipPos = tip ? tooltipPosition(tip.x, tip.y, window.innerWidth, window.innerHeight, tipSize.w, tipSize.h) : null;
 
@@ -105,7 +112,7 @@ export function BarChart({ data, owners, selected = null }: { data: BreakdownRes
                     rx={4}
                     fill={CHART_COLORS[k]}
                     style={{ transformOrigin: `${marginLeft}px 0px` }}
-                    onPointerMove={(e) => setTip({ text: `${labels[i]} · ${TYPE_LABELS[k]}: ${fmtInt(v)}`, x: e.clientX, y: e.clientY })}
+                    onPointerMove={(e) => setTip({ text: `${tooltipLabels[i]} · ${TYPE_LABELS[k]}: ${fmtInt(v)}`, x: e.clientX, y: e.clientY })}
                     onPointerLeave={() => setTip(null)}
                   />
                 );
