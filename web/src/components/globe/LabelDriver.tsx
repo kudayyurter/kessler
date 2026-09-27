@@ -76,10 +76,11 @@ export function LabelDriver({
     for (const src of sources.current ?? []) {
       if (!src) continue;
       const names = nameCache.peek(src.group);
-      if (!names) {
-        void nameCache.get(src.group);
-        continue;
-      }
+      // Request the current generation's own map whenever it isn't loaded yet, regardless of
+      // whether peek() already has a fallback to show — get() dedupes an in-flight request and
+      // applies the failure cooldown, so calling it every reselect is cheap.
+      if (!nameCache.ready(src.group)) void nameCache.get(src.group);
+      if (!names) continue;
       src.records.forEach((r, i) => {
         if (!src.visible[i]) return;
         const name = names.get(r.noradId);

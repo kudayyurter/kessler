@@ -65,3 +65,79 @@ describe("name cache", () => {
     expect(c.peek("HIGH")?.get(1)).toBe("g2:HIGH");
   });
 });
+
+// Models LabelDriver's own reselect pattern (peek for what to show now; independently kick a
+// fetch whenever the CURRENT generation's map isn't loaded, regardless of what peek returned) —
+// see LabelDriver.tsx's reselect(). Returns the pending fetch (if one was started) so tests can
+// await it, standing in for the real 250ms cadence that lets it land on its own.
+function reselectNames(c: ReturnType<typeof createNameCache>, g: "LEO" | "HIGH") {
+  const names = c.peek(g);
+  const pending = c.ready(g) ? null : c.get(g);
+  return { names, pending };
+}
+
+describe("name cache — LabelDriver's peek/ready/get pattern across generation switches", () => {
+  it("(a) fetches the new generation's names on the first reselect after a switch, replacing the fallback", async () => {
+    const fetcher = vi.fn(async (_g: "LEO" | "HIGH", gen?: string) => ({ "1": gen ?? "none" }));
+    const c = createNameCache(fetcher);
+    c.useGeneration("g1");
+    await reselectNames(c, "LEO").pending;
+
+    c.useGeneration("g2");
+    const first = reselectNames(c, "LEO");
+    expect(first.names?.get(1)).toBe("g1"); // fallback shown immediately
+    expect(first.pending).not.toBeNull(); // g2's own map must be requested despite the fallback
+    await first.pending;
+    expect(c.peek("LEO")?.get(1)).toBe("g2"); // new generation's names replace the fallback
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenLastCalledWith("LEO", "g2");
+  });
+
+  it("(b) two switches before a load keep serving the last good map and fetch only the newest generation", async () => {
+    const fetcher = vi.fn(async (_g: "LEO" | "HIGH", gen?: string) => ({ "1": gen ?? "none" }));
+    const c = createNameCache(fetcher);
+    c.useGeneration("g1");
+    await reselectNames(c, "LEO").pending;
+
+    c.useGeneration("g2"); // no reselect in between: nothing g2-related is ever fetched
+    c.useGeneration("g3");
+    const first = reselectNames(c, "LEO");
+    expect(first.names?.get(1)).toBe("g1"); // last GOOD map, not the never-loaded g2
+    expect(first.pending).not.toBeNull();
+    await first.pending;
+    expect(c.peek("LEO")?.get(1)).toBe("g3");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenLastCalledWith("LEO", "g3");
+  });
+
+  it("(c) a failed fetch keeps the fallback and is retried after the cooldown", async () => {
+    let t = 0;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ "1": "g1" })
+      .mockRejectedValueOnce(new Error("404"))
+      .mockResolvedValue({ "1": "g2" });
+    const c = createNameCache(fetcher, () => t, 60_000);
+    c.useGeneration("g1");
+    await reselectNames(c, "LEO").pending;
+
+    c.useGeneration("g2");
+    let r = reselectNames(c, "LEO");
+    expect(r.names?.get(1)).toBe("g1");
+    await r.pending; // fails
+    expect(c.peek("LEO")?.get(1)).toBe("g1"); // fallback still shown
+
+    t = 30_000; // still cooling down
+    r = reselectNames(c, "LEO");
+    expect(r.pending).not.toBeNull(); // get() is still called every reselect...
+    await r.pending;
+    expect(fetcher).toHaveBeenCalledTimes(2); // ...but the cooldown means no new fetcher call
+    expect(c.peek("LEO")?.get(1)).toBe("g1");
+
+    t = 61_000; // cooldown over
+    r = reselectNames(c, "LEO");
+    await r.pending;
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(c.peek("LEO")?.get(1)).toBe("g2");
+  });
+});
