@@ -1,0 +1,165 @@
+{
+  "date": "2026-09-27",
+  "commit": "13b6b4cdc33fac98c721de057956bbbc90def471",
+  "generatedAt": "2026-09-27T06:41:32.326680+00:00",
+  "timeMs": 1790511173000,
+  "snapshotAgeHours": 5.5224094444444445,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 294,
+      "maxKm": 0.0487445454783813,
+      "p95Km": 0.04621202965373417
+    },
+    "DEB": {
+      "n": 161,
+      "maxKm": 0.047288037013529204,
+      "p95Km": 0.04394445631189609
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04640132023215228,
+      "p95Km": 0.04508192163286871
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04364438282862994,
+      "p95Km": 0.04364438282862994
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 434,
+      "maxKm": 0.0487445454783813,
+      "p95Km": 0.04583917216488343
+    },
+    "HIGH": {
+      "n": 66,
+      "maxKm": 0.047288037013529204,
+      "p95Km": 0.045322880038795955
+    }
+  },
+  "age": {
+    "p50Days": 0.8107143892584907,
+    "p95Days": 4.600747059258355,
+    "staleShare": 0.074
+  },
+  "iss": {
+    "groundKm": 0.0003599905689002752,
+    "altDiffKm": 0.0018576344902498931,
+    "theirs": {
+      "latDeg": 46.584565621563,
+      "lonDeg": 20.481603653031,
+      "altKm": 428.3158570906,
+      "timestamp": 1790511173
+    }
+  },
+  "worst": [
+    {
+      "noradId": 56300,
+      "name": "STARLINK-30104",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.4389846192593045,
+      "groundKm": 0.0487445454783813,
+      "altDiffKm": 0.00023223781607839555,
+      "ok": true
+    },
+    {
+      "noradId": 60461,
+      "name": "YAOGAN-43 01D",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5529980692602087,
+      "groundKm": 0.048647700824921314,
+      "altDiffKm": 0.00009974442900784197,
+      "ok": true
+    },
+    {
+      "noradId": 43082,
+      "name": "YAOGAN-30 04B",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.2957258692593045,
+      "groundKm": 0.048633997708449735,
+      "altDiffKm": 0.00007136097667626018,
+      "ok": true
+    },
+    {
+      "noradId": 67443,
+      "name": "HULIANWANG DIGUI-145",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6770747692588523,
+      "groundKm": 0.047949818600743425,
+      "altDiffKm": -0.0003159626849082997,
+      "ok": true
+    },
+    {
+      "noradId": 57345,
+      "name": "STARLINK-6373",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3039613892590558,
+      "groundKm": 0.047941542908880856,
+      "altDiffKm": 0.000054938973846674344,
+      "ok": true
+    },
+    {
+      "noradId": 58536,
+      "name": "STARLINK-31037",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3011445392580385,
+      "groundKm": 0.04730342842100098,
+      "altDiffKm": 0.00020793731573576224,
+      "ok": true
+    },
+    {
+      "noradId": 23294,
+      "name": "SL-12 DEB",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 1.88964983925996,
+      "groundKm": 0.047288037013529204,
+      "altDiffKm": 0.0012372521391625924,
+      "ok": true
+    },
+    {
+      "noradId": 61954,
+      "name": "STARLINK-32574",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7837040292584455,
+      "groundKm": 0.047273897619877006,
+      "altDiffKm": 0.00034201460402982775,
+      "ok": true
+    },
+    {
+      "noradId": 2016,
+      "name": "DIAPASON (D1-A)",
+      "type": "PAY",
+      "regime": "HIGH",
+      "ageDays": 0.8721578492595531,
+      "groundKm": 0.047178532776518234,
+      "altDiffKm": -0.0008587626043663477,
+      "ok": true
+    },
+    {
+      "noradId": 68727,
+      "name": "STARLINK-37270",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.35902254925763166,
+      "groundKm": 0.04702266303856176,
+      "altDiffKm": 0.00005035607580339274,
+      "ok": true
+    }
+  ]
+}
