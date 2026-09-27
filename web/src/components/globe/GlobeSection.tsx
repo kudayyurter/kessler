@@ -6,6 +6,7 @@ import { simClock } from "@/lib/clock";
 import type { GroupName } from "@/lib/globeData";
 import { useExplorer } from "@/lib/store";
 import { subsolarPoint } from "@/lib/sun";
+import { FilterSummary } from "@/components/globe/FilterSummary";
 import { GlobeErrorBoundary } from "@/components/globe/GlobeErrorBoundary";
 import { GlobeScene } from "@/components/globe/GlobeScene";
 import { StatusPill } from "@/components/globe/StatusPill";
@@ -177,10 +178,13 @@ export function GlobeSection() {
         className="pointer-events-none absolute inset-x-2 top-3 z-10 flex flex-col items-center gap-2 short:flex-row short:justify-center short:gap-3 wide:bottom-4 wide:left-[calc(16px+var(--col-l)+8px)] wide:right-[calc(16px+var(--col-r)+8px)] wide:top-auto"
       >
         <Readout live={webgl === true && !broken} />
-        {/* Hidden without WebGL: the "can't show the 3D globe" message already explains the page. */}
-        {webgl === true && !broken && (
-          <StatusPill input={{ groups: globe.groups, wanted, generatedAt: globe.generatedAt }} onRetry={globe.retry} />
-        )}
+        <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
+          {/* Hidden without WebGL: the "can't show the 3D globe" message already explains the page. */}
+          {webgl === true && !broken && (
+            <StatusPill input={{ groups: globe.groups, wanted, generatedAt: globe.generatedAt }} onRetry={globe.retry} />
+          )}
+          <FilterSummary />
+        </div>
       </div>
     </section>
   );

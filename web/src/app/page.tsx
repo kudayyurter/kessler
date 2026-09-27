@@ -35,6 +35,7 @@ export default function Explorer() {
   const dataVersion = useExplorer((s) => s.dataVersion);
   const dataGeneration = useExplorer((s) => s.dataGeneration);
   const hydratePanels = useExplorer((s) => s.hydratePanels);
+  const setOwnerDirectory = useExplorer((s) => s.setOwnerDirectory);
   // null until hydrated: the server HTML (and the hydration pass) renders both layout shells and
   // CSS (`sheet:` / `wide:` variants) shows the right one, so first paint never flashes the wrong
   // layout. Panel bodies are rendered in only ONE shell at a time — the desktop columns before
@@ -43,6 +44,10 @@ export default function Explorer() {
   const sheet = useSheetLayout();
 
   useEffect(() => hydratePanels(), [hydratePanels]);
+
+  useEffect(() => {
+    if (meta.data) setOwnerDirectory(meta.data.owners);
+  }, [meta.data, setOwnerDirectory]);
 
   // Re-fetched whenever the globe swaps in a newly published generation (dataVersion); a failed
   // refresh keeps the numbers already shown, and `keepPrevIfEqual` keeps the same object identity

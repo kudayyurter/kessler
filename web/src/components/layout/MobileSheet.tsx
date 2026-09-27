@@ -15,6 +15,7 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
   const open = useExplorer((s) => s.mobileSheetOpen);
   const setOpen = useExplorer((s) => s.setMobileSheetOpen);
   const setSheetTop = useExplorer((s) => s.setMobileSheetTop);
+  const panelRequest = useExplorer((s) => s.panelRequest);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,15 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
       setOpen(true);
     }
   }, [selectedId, setOpen]);
+
+  useEffect(() => {
+    if (!panelRequest) return;
+    // Reacting to an external request (the filter summary's "open Filters"), same justification as
+    // the selection effect above.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActive(panelRequest.id);
+    setOpen(true);
+  }, [panelRequest, setOpen]);
 
   // Publishes the sheet's real rendered top edge: with the top bar's bottom edge (measured in
   // GlobeSection) it bounds the part of the globe left visible, which GlobeScene centres the Earth

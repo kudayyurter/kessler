@@ -10,6 +10,16 @@ import { expect, test, type Page } from "@playwright/test";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const fx = (name: string) => readFileSync(path.join(dirname, "../tests/fixtures", name));
 
+// The fixture /meta lists only US and PRC; tests of the owner picker add a few more owners.
+function metaWithOwners(): string {
+  const meta = JSON.parse(fx("api/meta.json").toString());
+  meta.owners.push(
+    { code: "GER", name: "Germany", flag_emoji: "🇩🇪", in_orbit: 102, total: 110 },
+    { code: "FGER", name: "France/Germany", flag_emoji: null, in_orbit: 2, total: 2 },
+  );
+  return JSON.stringify(meta);
+}
+
 // Builds a LEO snapshot fixture for a second generation: same records, a different publish time
 // in its header. Same length in, same length out keeps the header's byte-length field and record
 // alignment valid, so this is a plain byte-level patch, not a re-encode. Used by the swap test
@@ -509,4 +519,53 @@ test("search says when nothing matches, and offers Retry when it fails", async (
   await page.locator('[data-panel="search"]').getByRole("button", { name: "Retry" }).click();
   await expect(page.getByRole("button", { name: /ISS \(ZARYA\)/ })).toBeVisible();
   await expect(page.getByText("1 match")).toBeVisible();
+});
+
+test("the Unknown chip filters the chart requests", async ({ page }) => {
+  await mockApi(page);
+  const typesParams: (string | null)[] = [];
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    if (u.pathname === "/api/stats/timeseries") typesParams.push(u.searchParams.get("types"));
+  });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Unknown", exact: true }).click();
+  await expect.poll(() => typesParams.at(-1)).toBe("PAY,R/B,DEB");
+  await expect(page.getByTestId("filter-summary")).toContainText("3 of 4 types");
+});
+
+test("the owner picker finds any owner by typing and filters History", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithOwners() } });
+  const ownersParams: (string | null)[] = [];
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    if (u.pathname === "/api/stats/timeseries") ownersParams.push(u.searchParams.get("owners"));
+  });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  // getByLabel("Owner") alone is ambiguous here: it also substring-matches the (unrelated, always
+  // shown) Owners panel's region label, its "Hide Owners" button, and the Owners chart's alt text
+  // — scope to the Filters panel, as the Search-panel Retry lookup above does for the same reason.
+  const ownerInput = page.locator('[data-panel="filters"]').getByLabel("Owner");
+  await ownerInput.fill("ger");
+  await expect(page.getByRole("option")).toHaveCount(2);
+  await page.getByRole("option", { name: /Germany/ }).first().click();
+  await expect.poll(() => ownersParams.at(-1)).toBe("GER");
+  await expect(ownerInput).toHaveValue("🇩🇪 Germany");
+  await expect(page.getByTestId("filter-summary")).toContainText("🇩🇪 Germany");
+});
+
+test("the filter summary appears when filters change and Reset restores the defaults", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.getByTestId("filter-summary")).toHaveCount(0);
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  const summary = page.getByTestId("filter-summary");
+  await expect(summary).toContainText("Showing All orbits · All owners · all types");
+  await summary.getByRole("button", { name: "Reset filters" }).click();
+  await expect(summary).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Higher orbits" })).toHaveAttribute("aria-pressed", "false");
 });
