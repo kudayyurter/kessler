@@ -43,6 +43,11 @@ interface ExplorerState extends Filters {
   highStatus: GroupStatus;
   // Whether each chart's "View data" disclosure (see ChartData.tsx) is open, per chart.
   dataTablesOpen: { history: boolean; owners: boolean };
+  // Whether the camera has moved away from the whole-Earth fitted framing (see lib/camera.ts's
+  // isOffFit), published by GlobeScene's throttled per-frame check — drives FitButton's visibility.
+  offFit: boolean;
+  // Bumped by FitButton to ask GlobeScene to fly the camera back to the fitted framing.
+  fitRequest: number;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -66,6 +71,8 @@ interface ExplorerState extends Filters {
   openPanel: (id: PanelId) => void;
   setHighStatus: (status: GroupStatus) => void;
   toggleDataTable: (which: "history" | "owners") => void;
+  setOffFit: (offFit: boolean) => void;
+  requestFit: () => void;
   reset: () => void;
 }
 
@@ -84,6 +91,8 @@ const initial = (): Filters &
     | "panelRequest"
     | "highStatus"
     | "dataTablesOpen"
+    | "offFit"
+    | "fitRequest"
   > => ({
   types: [...OBJECT_TYPES],
   owners: [],
@@ -100,6 +109,8 @@ const initial = (): Filters &
   panelRequest: null,
   highStatus: "idle",
   dataTablesOpen: { history: false, owners: false },
+  offFit: false,
+  fitRequest: 0,
 });
 
 export const useExplorer = create<ExplorerState>((set, get) => ({
@@ -169,6 +180,8 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
       return { panels, panelRequest: { id, n: (s.panelRequest?.n ?? 0) + 1 } };
     }),
   toggleDataTable: (which) => set((s) => ({ dataTablesOpen: { ...s.dataTablesOpen, [which]: !s.dataTablesOpen[which] } })),
+  setOffFit: (offFit) => set({ offFit }),
+  requestFit: () => set((s) => ({ fitRequest: s.fitRequest + 1 })),
   reset: () => set(initial()),
 }));
 

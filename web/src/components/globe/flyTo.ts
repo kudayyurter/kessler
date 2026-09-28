@@ -33,12 +33,15 @@ export function locate(locators: readonly (Locator | undefined)[], expected: rea
   return pending ? "pending" : "absent";
 }
 
-/** Arcs the camera around the globe (never through it) to look at `target` from `distance`. */
+/** Arcs the camera around the globe (never through it) to look at `target` from `distance`. Set
+ * `arc = false` for a fit (same direction, only the distance changes) so the flight doesn't swing
+ * the radius out and bounce back for no visual reason. */
 export function flyTo(
   camera: THREE.PerspectiveCamera,
   target: THREE.Vector3,
   distance: number,
   onDone?: () => void,
+  arc = true,
 ): { cancel(): void } {
   const from = new THREE.Spherical().setFromVector3(camera.position);
   const to = new THREE.Spherical().setFromVector3(target.clone().normalize().multiplyScalar(distance));
@@ -53,7 +56,7 @@ export function flyTo(
   }
   const s = { r: from.radius, phi: from.phi, theta: from.theta };
   const anim = animate(s, {
-    r: [from.radius, Math.max(from.radius, to.radius) + 0.6, to.radius],
+    r: arc ? [from.radius, Math.max(from.radius, to.radius) + 0.6, to.radius] : to.radius,
     phi: to.phi,
     theta: from.theta + shortestAngle(from.theta, to.theta),
     duration: 2000,

@@ -1045,3 +1045,37 @@ test("Tab out of the open owner list keeps focus on a page control", async ({ pa
   await page.keyboard.press("Tab");
   expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe("BODY");
 });
+
+test("the Fit pill appears after a fly-to and brings back the whole-Earth view", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const fit = page.getByRole("button", { name: "Fit globe" });
+  await expect(fit).toHaveCount(0);
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  await expect(fit).toBeVisible({ timeout: 10_000 });
+  await fit.click();
+  await expect(fit).toHaveCount(0, { timeout: 10_000 });
+});
+
+test("resizing from desktop to phone width re-fits the Earth", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.waitForTimeout(500);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  await expect
+    .poll(
+      async () => {
+        const top = Number(await section.getAttribute("data-earth-top"));
+        const bar = await page.getByTestId("globe-topbar").boundingBox();
+        return bar ? top - (bar.y + bar.height) : -1;
+      },
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThanOrEqual(0);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+});

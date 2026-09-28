@@ -220,3 +220,16 @@ describe("data tables", () => {
     expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true });
   });
 });
+
+describe("fit globe", () => {
+  it("tracks whether the view is off the fitted framing and counts fit requests", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().offFit).toBe(false);
+    useExplorer.getState().setOffFit(true);
+    expect(useExplorer.getState().offFit).toBe(true);
+    expect(useExplorer.getState().fitRequest).toBe(0);
+    useExplorer.getState().requestFit();
+    useExplorer.getState().requestFit();
+    expect(useExplorer.getState().fitRequest).toBe(2);
+  });
+});

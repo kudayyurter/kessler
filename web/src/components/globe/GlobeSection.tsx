@@ -7,6 +7,7 @@ import type { GroupName } from "@/lib/globeData";
 import { useExplorer } from "@/lib/store";
 import { subsolarPoint } from "@/lib/sun";
 import { FilterSummary } from "@/components/globe/FilterSummary";
+import { FitButton } from "@/components/globe/FitButton";
 import { GlobeErrorBoundary } from "@/components/globe/GlobeErrorBoundary";
 import { GlobeScene } from "@/components/globe/GlobeScene";
 import { StatusPill } from "@/components/globe/StatusPill";
@@ -193,6 +194,7 @@ export function GlobeSection() {
           {webgl === true && !broken && (
             <StatusPill input={{ groups: globe.groups, wanted, generatedAt: globe.generatedAt }} onRetry={globe.retry} />
           )}
+          {webgl === true && !broken && <FitButton />}
           <FilterSummary />
         </div>
       </div>
