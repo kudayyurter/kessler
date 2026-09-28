@@ -1028,6 +1028,23 @@ test("phone sheet: collapse is always visible and the tabs follow the ARIA tabs 
   await expect(sheet.getByRole("tabpanel")).toBeVisible();
 });
 
+test("collapsed sheet: every tab's aria-controls still resolves to an element in the DOM", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  const collapse = sheet.getByRole("button", { name: "Collapse panel" });
+  await collapse.click();
+  await expect(sheet.getByRole("button", { name: "Expand panel" })).toHaveAttribute("aria-expanded", "false");
+  const ids = await sheet.getByRole("tab").evaluateAll((els) => els.map((e) => e.getAttribute("aria-controls")));
+  expect(ids.length).toBe(6);
+  const allPresent = await page.evaluate(
+    (idList) => idList.every((id) => id !== null && document.getElementById(id) !== null),
+    ids,
+  );
+  expect(allPresent).toBe(true);
+});
+
 test("the dock lists Search and Filters first and tags Ask AI as soon", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");

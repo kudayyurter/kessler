@@ -146,11 +146,16 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
           {open ? "▾" : "▴"}
         </button>
       </div>
-      {open && showBody && (
-        <div id={panelId} role="tabpanel" aria-labelledby={tabId(active)} tabIndex={0} className="max-h-[calc(60dvh-56px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-56px)]">
-          {PANEL_CONTENT[active](ctx)}
-        </div>
-      )}
+      <div
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={tabId(active)}
+        tabIndex={0}
+        hidden={!(open && showBody)}
+        className="max-h-[calc(60dvh-56px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-56px)]"
+      >
+        {open && showBody && PANEL_CONTENT[active](ctx)}
+      </div>
     </div>
   );
 }
