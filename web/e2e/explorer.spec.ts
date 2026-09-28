@@ -1059,6 +1059,37 @@ test("the Fit pill appears after a fly-to and brings back the whole-Earth view",
   await expect(fit).toHaveCount(0, { timeout: 10_000 });
 });
 
+test("phone: a search fly-to survives an auto-refit triggered by the filter summary pill unmounting", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const sheet = page.getByTestId("mobile-sheet");
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  // Turn off Payloads (the filter-summary pill mounts onto the top bar, growing it by a row) and
+  // let the auto-refit that triggers settle before searching — otherwise the two refits blur
+  // together instead of isolating the one the search's own filter reset must survive.
+  await sheet.getByRole("tab", { name: "Filters" }).click();
+  await sheet.getByRole("button", { name: "Payloads" }).click();
+  await expect(page.getByTestId("filter-summary")).toBeVisible();
+  await page.waitForTimeout(2500); // outlive the 2s fit flight before polling for settlement
+  await expect(async () => {
+    const a = await section.getAttribute("data-earth-cy");
+    await page.waitForTimeout(600);
+    const b = await section.getAttribute("data-earth-cy");
+    expect(a).not.toBeNull();
+    expect(Math.abs(Number(a) - Number(b))).toBeLessThanOrEqual(0.5);
+  }).toPass({ timeout: 10_000 });
+  await sheet.getByRole("tab", { name: "Search" }).click();
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  // selectFromSearch turns Payloads back on: filters return to default, the summary pill
+  // unmounts, and the top bar shrinks a row — the auto-refit this triggers must not hijack the
+  // fly-to already under way (the camera should end up zoomed in on ISS, off-fit, Fit pill shown).
+  await expect(page.getByTestId("filter-summary")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toBeVisible({ timeout: 10_000 });
+});
+
 test("resizing from desktop to phone width re-fits the Earth", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await mockApi(page);

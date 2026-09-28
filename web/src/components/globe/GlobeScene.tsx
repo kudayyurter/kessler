@@ -65,7 +65,8 @@ export function GlobeScene({
   // Sparse by group index (0 = LEO, 1 = HIGH), same convention as `locators` above — fed by
   // Objects' onLabelSource and read every tick by LabelDriver.
   const labelSources = useRef<(LabelSource | undefined)[]>([]);
-  // The initial camera distance is set exactly once; afterwards zoom belongs to the user.
+  // The initial camera distance is set exactly once; afterwards zoom belongs to the user — except
+  // for the Fit button and the auto-refit effect below, which explicitly retarget the camera.
   const positioned = useRef(false);
   // Throttle for the off-fit check inside useFrame — see below.
   const offFitElapsed = useRef(0);
@@ -131,10 +132,19 @@ export function GlobeScene({
   );
 
   // Whether the flight currently in progress (if any) is a fit flight (auto-refit or the Fit
-  // button) rather than a selection fly-to. Only a fit flight is safe to retarget mid-flight when
-  // a fresher `fitted` measurement arrives — a selection flight must never be hijacked by a
-  // coincidental top-bar reflow. Set immediately before every startFlight call below.
+  // button) rather than a selection fly-to. The auto-refit effect below uses this two ways: while
+  // it's false and a flight is running (a selection fly-to under way), the effect skips refitting
+  // entirely — it only records the new measurement — so a coincidental top-bar reflow (e.g. the
+  // filter summary pill mounting/unmounting around a search selection) can never hijack the
+  // fly-to and strand it at the fitted distance instead of the selected object. While it's true, a
+  // fresher `fitted` measurement may retarget that same fit flight in place instead of racing a
+  // second one. Set immediately before every startFlight call below.
   const fitFlightActive = useRef(false);
+  // The distance the fit flight currently in progress (if any) is actually heading to — set
+  // whenever a fit flight starts (Fit button or auto-refit). The auto-refit effect below compares
+  // a fresher `fitted` measurement against this (not the previous measurement) so two consecutive
+  // sub-5% drifts that add up to an off-fit target still trigger a retarget.
+  const fitTarget = useRef<number | null>(null);
 
   // Fit on request (the "⤢ Fit globe" pill — see FitButton/store.ts's fitRequest): keeps the
   // current direction, only the distance changes. `startFlight` already cancels a running flight,
@@ -145,6 +155,7 @@ export function GlobeScene({
     if (fitRequest === seenFit.current || fitted === null) return;
     seenFit.current = fitRequest;
     fitFlightActive.current = true;
+    fitTarget.current = fitted;
     startFlight(camera.position.clone(), fitted, false);
   }, [fitRequest, fitted, camera, startFlight]);
 
@@ -164,11 +175,18 @@ export function GlobeScene({
   useEffect(() => {
     if (!positioned.current || fitted === null) return;
     const next = { sheet: sheetLayout, fitted };
+    // A selection fly-to is running: never contest it for the camera, just keep the measurement
+    // current so the comparison is accurate once the flight ends.
+    if (fly.current !== null && !fitFlightActive.current) {
+      lastFit.current = next;
+      return;
+    }
     const prev = lastFit.current;
     const midFitFlight = fly.current !== null && fitFlightActive.current;
-    const refit = midFitFlight ? prev !== null && isOffFit(next.fitted, prev.fitted) : shouldRefit(prev, next, camera.position.length());
+    const refit = midFitFlight ? fitTarget.current !== null && isOffFit(fitted, fitTarget.current) : shouldRefit(prev, next, camera.position.length());
     if (refit) {
       fitFlightActive.current = true;
+      fitTarget.current = fitted;
       startFlight(camera.position.clone(), fitted, false);
     }
     lastFit.current = next;
