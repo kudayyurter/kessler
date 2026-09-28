@@ -81,7 +81,11 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
   useEffect(() => {
     const el = stripRef.current;
     if (!el) return;
-    const update = () => setFade({ left: el.scrollLeft > 2, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+    const update = () => {
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+      setFade((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+    };
     update();
     el.addEventListener("scroll", update, { passive: true });
     const ro = new ResizeObserver(update);
@@ -141,7 +145,7 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
           aria-expanded={open}
           aria-controls={panelId}
           aria-label={open ? "Collapse panel" : "Expand panel"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center border-l-2 border-line text-ink-2"
+          className="flex h-11 w-11 shrink-0 self-center items-center justify-center border-l-2 border-line text-ink-2"
         >
           {open ? "▾" : "▴"}
         </button>
@@ -152,7 +156,7 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
         aria-labelledby={tabId(active)}
         tabIndex={0}
         hidden={!(open && showBody)}
-        className="max-h-[calc(60dvh-56px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-56px)]"
+        className="max-h-[calc(60dvh-58px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-58px)]"
       >
         {open && showBody && PANEL_CONTENT[active](ctx)}
       </div>
