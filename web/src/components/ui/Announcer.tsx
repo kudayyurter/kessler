@@ -14,7 +14,7 @@ export function Announcer() {
   const announcement = useExplorer((s) => s.announcement);
   return (
     <p data-testid="announcer" role="status" aria-live="polite" className="sr-only">
-      {announcement ? announcement.text + (announcement.n % 2 ? " " : "") : ""}
+      {announcement ? announcement.text + (announcement.n % 2 ? "\u00A0" : "") : ""}
     </p>
   );
 }

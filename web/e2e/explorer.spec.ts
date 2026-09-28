@@ -328,7 +328,7 @@ test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) =
     }, { timeout: 5_000, message: `${tab}: Earth centre should be within 5% of the top-bar/sheet midpoint` }).toBeLessThanOrEqual(844 * 0.05);
   };
   await expect.poll(async () => globeSection.getAttribute("data-earth-cy"), { timeout: 5_000 }).not.toBeNull();
-  await expectCentred("Overview");
+  await expectCentred("Search");
   await sheet.getByRole("tab", { name: "History" }).click();
   await expect(page.locator("path[data-series]")).toHaveCount(3, { timeout: 10_000 });
   await expectCentred("History");
@@ -974,16 +974,32 @@ test("each chart's data is available as a table", async ({ page }) => {
   const view = history.getByRole("button", { name: "View data" });
   await expect(view).toHaveAttribute("aria-expanded", "false");
   await view.click();
-  await expect(history.getByRole("button", { name: "Hide data" })).toHaveAttribute("aria-expanded", "true");
+  const hide = history.getByRole("button", { name: "Hide data" });
+  await expect(hide).toHaveAttribute("aria-expanded", "true");
   const ht = history.getByRole("table", { name: "Objects in orbit at the end of each year" });
   await expect(ht.getByRole("columnheader", { name: "Year" })).toBeVisible();
   await expect(ht.getByRole("columnheader", { name: "Total" })).toBeVisible();
   expect(await ht.getByRole("row").count()).toBeGreaterThan(2);
+  // Years are newest-first: the first body row (after the header row) is the fixture's latest PAY.
+  const ts = JSON.parse(fx("api/timeseries.json").toString());
+  const latestPay = ts.series.find((s: { key: string }) => s.key === "PAY").values.at(-1) as number;
+  await expect(ht.getByRole("row").nth(1)).toContainText(latestPay.toLocaleString("en-US"));
+  // Re-close it and confirm the disclosure button still points at the same, now-hidden, region.
+  const regionId = await hide.getAttribute("aria-controls");
+  const region = page.locator(`#${regionId}`);
+  await hide.click();
+  await expect(view).toHaveAttribute("aria-expanded", "false");
+  await expect(region).toBeHidden();
+  expect(await view.getAttribute("aria-controls")).toBe(regionId);
+
   const owners = page.locator('[data-panel="owners"]');
   await owners.getByRole("button", { name: "View data" }).click();
   const ot = owners.getByRole("table", { name: "Objects in orbit by owner and type" });
   await expect(ot).toContainText("United States");
   await expect(ot.getByRole("columnheader", { name: "Owner" })).toBeVisible();
+  const breakdown = JSON.parse(fx("api/breakdown.json").toString());
+  const usTotal = breakdown.rows.find((r: { key: string }) => r.key === "US").total as number;
+  await expect(ot.getByRole("row").filter({ hasText: "United States" })).toContainText(usTotal.toLocaleString("en-US"));
 });
 
 test("a narrow History chart shows current values in its legend", async ({ page }) => {
@@ -1202,11 +1218,10 @@ test("Reset announces itself again even when the message repeats", async ({ page
   await page.getByRole("button", { name: "Higher orbits" }).click();
   await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
   // Playwright's toHaveText normalises whitespace, so it can't tell "Filters reset" apart from a
-  // repeat that only changed by a trailing no-break space — read the raw textContent for that.
+  // repeat that only changed by a trailing no-break space — poll the raw textContent for that,
+  // right after the click, before it's had a chance to settle to its normalised-equal value.
   await expect(announcer).toHaveText("Filters reset");
-  const second = await announcer.textContent();
-
-  expect(second).not.toBe(first);
+  await expect.poll(() => announcer.textContent()).not.toBe(first);
 });
 
 test("Reset with Filters hidden focuses the dock's Filters button", async ({ page }) => {
@@ -1218,6 +1233,20 @@ test("Reset with Filters hidden focuses the dock's Filters button", async ({ pag
   await page.getByRole("button", { name: "Hide Filters" }).click();
   await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
   await expect(dockFilters).toBeFocused();
+});
+
+test("phone: Reset with the Filters body off-screen falls back to focusing the sheet's Filters tab", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  await sheet.getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  // Switching tabs unmounts the Filters body (and its data-filters-first chip) — Reset's own
+  // focus target is gone, so it must fall back to whatever opens Filters (see focusFilters.ts).
+  await sheet.getByRole("tab", { name: "Search" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute("data-opens"))).toBe("filters");
 });
 
 test("no horizontal overflow at 320 px, even with the longest status text", async ({ page }) => {
