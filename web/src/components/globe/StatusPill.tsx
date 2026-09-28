@@ -28,7 +28,7 @@ export function StatusPill({ input, onRetry }: { input: PillInput; onRetry: (g: 
       title={s.title ?? undefined}
       className="label pointer-events-auto flex max-w-full select-none flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border-2 border-line bg-[#121212] px-3 py-2 !text-ink"
     >
-      <span role="status" className="whitespace-nowrap">
+      <span role="status" className="text-center">
         <span aria-hidden="true" style={{ color: TONE_COLOR[s.tone] }}>
           {s.tone === "grey" ? "○" : "●"}
         </span>{" "}

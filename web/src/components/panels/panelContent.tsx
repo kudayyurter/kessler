@@ -6,6 +6,7 @@ import type { PanelId } from "@/lib/panels";
 import { useExplorer } from "@/lib/store";
 import type { BreakdownResponse, Meta, TimeseriesResponse } from "@/lib/types";
 import { BarChart } from "@/components/charts/BarChart";
+import { DataDisclosure, HistoryDataTable, OwnersDataTable } from "@/components/charts/ChartData";
 import { LineChart } from "@/components/charts/LineChart";
 import { ChatPanel } from "@/components/panels/ChatPanel";
 import { Filters } from "@/components/panels/Filters";
@@ -42,6 +43,11 @@ function OwnersChart({ c }: { c: PanelCtx }) {
           <BarChart data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} rankFor={c.bars.rankFor} />
         )}
       </div>
+      {!c.bars.error && c.bars.data && (
+        <DataDisclosure which="owners" label="Owners data">
+          <OwnersDataTable data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} rankFor={c.bars.rankFor} />
+        </DataDisclosure>
+      )}
     </div>
   );
 }
@@ -60,6 +66,11 @@ export const PANEL_CONTENT: Record<PanelId, (c: PanelCtx) => React.ReactNode> = 
       <p className="mt-1 text-[13px] leading-snug text-ink-2">Objects in orbit at the end of each year.</p>
       <HistoryScope />
       <div className="mt-2">{c.ts.error ? <Unavailable what="yearly history" /> : c.ts.data && <LineChart data={c.ts.data} />}</div>
+      {!c.ts.error && c.ts.data && (
+        <DataDisclosure which="history" label="History data">
+          <HistoryDataTable data={c.ts.data} />
+        </DataDisclosure>
+      )}
     </div>
   ),
   owners: (c) => <OwnersChart c={c} />,

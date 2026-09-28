@@ -55,3 +55,28 @@ export function sheetInitialDistance(width: number, height: number, topBarBottom
   const tanTheta = ((fill * box) / 2 / (height / 2)) * half;
   return 1 / Math.sin(Math.atan(tanTheta));
 }
+
+/** The whole-Earth camera distance for the current layout, or null in the sheet layout before
+ * the top bar has been measured. */
+export function fittedDistance(sheetLayout: boolean, width: number, height: number, topBarBottom: number | null): number | null {
+  if (sheetLayout) return topBarBottom === null ? null : sheetInitialDistance(width, height, topBarBottom);
+  return initialDistance(width / Math.max(height, 1));
+}
+
+/** How far (as a fraction) the camera distance may drift from the fitted one before the view counts as "moved away". */
+export const FIT_TOLERANCE = 0.05;
+
+export function isOffFit(distance: number, fitted: number, tolerance = FIT_TOLERANCE): boolean {
+  return Math.abs(distance - fitted) / fitted > tolerance;
+}
+
+export type FitState = { sheet: boolean; fitted: number };
+
+/** Whether a layout change should re-fit the camera: always on a desktop↔sheet switch; for a sheet
+ * top-bar change only when the fitted distance moved beyond the tolerance AND the camera was still
+ * at the old fitted distance (never fight the user's zoom); never on the first measurement. */
+export function shouldRefit(prev: FitState | null, next: FitState, distance: number): boolean {
+  if (!prev) return false;
+  if (prev.sheet !== next.sheet) return true;
+  return next.sheet && isOffFit(next.fitted, prev.fitted) && !isOffFit(distance, prev.fitted);
+}

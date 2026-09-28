@@ -5,6 +5,7 @@ import { scaleLinear } from "d3-scale";
 import { curveMonotoneX, line } from "d3-shape";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ANNOTATIONS, visibleTypeSeries } from "@/lib/chartData";
+import { latestValues } from "@/lib/chartTables";
 import { fmtInt } from "@/lib/format";
 import { prefersReducedMotion } from "@/lib/motion";
 import { CHART_COLORS, TYPE_LABELS, type TimeseriesResponse } from "@/lib/types";
@@ -41,6 +42,10 @@ export function LineChart({ data }: { data: TimeseriesResponse }) {
   }, [hover]);
 
   const series = visibleTypeSeries(data);
+  // Below this width the plot's right margin (room for the end-of-line value labels) is wasted
+  // space better spent on the plot itself; those values move into the legend instead.
+  const compact = width < 420;
+  const latest = latestValues(data);
   const years = data.years;
   // Left margin sized from the widest formatted y-tick label (e.g. "20,000"), not a fixed guess —
   // a fixed 52px margin clipped the leading glyph of 6-character labels at Departure Mono's
@@ -48,7 +53,7 @@ export function LineChart({ data }: { data: TimeseriesResponse }) {
   const yMax = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
   const yTickValues = yTicks(yMax);
   const maxTickLen = Math.max(0, ...yTickValues.map((t) => fmtInt(t).length));
-  const M = { ...M_BASE, l: Math.ceil(maxTickLen * CHAR_W) + 14 };
+  const M = { ...M_BASE, r: compact ? 12 : M_BASE.r, l: Math.ceil(maxTickLen * CHAR_W) + 14 };
   const x = scaleLinear().domain([years[0], years[years.length - 1]]).range([M.l, width - M.r]);
   const narrow = width < 520;
   const annotationItems = narrow ? [] : ANNOTATIONS.filter((a) => a.year >= years[0] && a.year <= years[years.length - 1]);
@@ -92,11 +97,12 @@ export function LineChart({ data }: { data: TimeseriesResponse }) {
 
   return (
     <div ref={wrap} className="relative">
-      <div className="mb-2 flex flex-wrap gap-4 text-[13px] text-ink-2">
-        {series.map((s) => (
+      <div data-testid="history-legend" className="mb-2 flex flex-wrap gap-4 text-[13px] text-ink-2">
+        {series.map((s, i) => (
           <span key={s.key} className="inline-flex items-center gap-2">
             <i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: CHART_COLORS[s.key] }} />
             {TYPE_LABELS[s.key]}
+            {compact && <b className="font-normal text-ink">{fmtInt(latest[i].value)}</b>}
           </span>
         ))}
       </div>
@@ -135,9 +141,11 @@ export function LineChart({ data }: { data: TimeseriesResponse }) {
           return (
             <g key={s.key}>
               <circle cx={x(years[years.length - 1])} cy={y(v)} r={4.5} fill={CHART_COLORS[s.key]} stroke="#0e0e0e" strokeWidth={2} />
-              <text x={x(years[years.length - 1]) + 10} y={y(v) + 4} className="fill-ink font-mono text-[12px]">
-                {fmtInt(v)}
-              </text>
+              {!compact && (
+                <text x={x(years[years.length - 1]) + 10} y={y(v) + 4} className="fill-ink font-mono text-[12px]">
+                  {fmtInt(v)}
+                </text>
+              )}
             </g>
           );
         })}

@@ -328,7 +328,7 @@ test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) =
     }, { timeout: 5_000, message: `${tab}: Earth centre should be within 5% of the top-bar/sheet midpoint` }).toBeLessThanOrEqual(844 * 0.05);
   };
   await expect.poll(async () => globeSection.getAttribute("data-earth-cy"), { timeout: 5_000 }).not.toBeNull();
-  await expectCentred("Overview");
+  await expectCentred("Search");
   await sheet.getByRole("tab", { name: "History" }).click();
   await expect(page.locator("path[data-series]")).toHaveCount(3, { timeout: 10_000 });
   await expectCentred("History");
@@ -447,7 +447,7 @@ test("a panel's own remount (crossing the sheet/desktop breakpoint) does not rep
   await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
   await page.getByRole("button", { name: "Higher orbits" }).click();
   // The summary pill's own button (openPanel) is a legitimate scroll request.
-  await page.getByTestId("filter-summary").getByRole("button", { name: /^Showing/ }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: /^Filtered: showing/ }).click();
   const countFilters = () => page.evaluate(() => (window as unknown as { __scrollCalls: string[] }).__scrollCalls.filter((id) => id === "filters").length);
   const callsAfterOpen = await countFilters();
   expect(callsAfterOpen).toBeGreaterThan(0);
@@ -497,8 +497,8 @@ for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 7
     await mockApi(page);
     await page.goto("/");
     await expect(page.locator("canvas")).toBeVisible();
-    await expect(page.locator("path[data-series], [data-testid=tile-PAY]").first()).toBeVisible({ timeout: 10_000 });
     const sheetLayout = w < 1024 || h < 560;
+    await expect(sheetLayout ? page.getByLabel("Find an object") : page.locator("path[data-series]").first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("mobile-sheet")).toHaveCount(sheetLayout ? 1 : 0);
     await expect(page.getByTestId("panel-dock")).toHaveCount(sheetLayout ? 0 : 1);
     await page.waitForTimeout(500); // let charts/ResizeObservers settle
@@ -966,3 +966,316 @@ test("a long owner name doesn't overflow the page or make the summary pill more 
   const box = (await summary.boundingBox())!;
   expect(box.height).toBeLessThanOrEqual(64);
 });
+
+test("each chart's data is available as a table", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const history = page.locator('[data-panel="history"]');
+  const view = history.getByRole("button", { name: "View data" });
+  await expect(view).toHaveAttribute("aria-expanded", "false");
+  await view.click();
+  const hide = history.getByRole("button", { name: "Hide data" });
+  await expect(hide).toHaveAttribute("aria-expanded", "true");
+  const ht = history.getByRole("table", { name: "Objects in orbit at the end of each year" });
+  await expect(ht.getByRole("columnheader", { name: "Year" })).toBeVisible();
+  await expect(ht.getByRole("columnheader", { name: "Total" })).toBeVisible();
+  expect(await ht.getByRole("row").count()).toBeGreaterThan(2);
+  // Years are newest-first: the first body row (after the header row) is the fixture's latest PAY.
+  const ts = JSON.parse(fx("api/timeseries.json").toString());
+  const latestPay = ts.series.find((s: { key: string }) => s.key === "PAY").values.at(-1) as number;
+  await expect(ht.getByRole("row").nth(1)).toContainText(latestPay.toLocaleString("en-US"));
+  // Re-close it and confirm the disclosure button still points at the same, now-hidden, region.
+  const regionId = await hide.getAttribute("aria-controls");
+  const region = page.locator(`#${regionId}`);
+  await hide.click();
+  await expect(view).toHaveAttribute("aria-expanded", "false");
+  await expect(region).toBeHidden();
+  expect(await view.getAttribute("aria-controls")).toBe(regionId);
+
+  const owners = page.locator('[data-panel="owners"]');
+  await owners.getByRole("button", { name: "View data" }).click();
+  const ot = owners.getByRole("table", { name: "Objects in orbit by owner and type" });
+  await expect(ot).toContainText("United States");
+  await expect(ot.getByRole("columnheader", { name: "Owner" })).toBeVisible();
+  const breakdown = JSON.parse(fx("api/breakdown.json").toString());
+  const usTotal = breakdown.rows.find((r: { key: string }) => r.key === "US").total as number;
+  await expect(ot.getByRole("row").filter({ hasText: "United States" })).toContainText(usTotal.toLocaleString("en-US"));
+});
+
+test("a narrow History chart shows current values in its legend", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "History" }).click();
+  const ts = JSON.parse(fx("api/timeseries.json").toString());
+  const pay = ts.series.find((s: { key: string }) => s.key === "PAY").values.at(-1) as number;
+  await expect(page.getByTestId("history-legend")).toContainText(pay.toLocaleString("en-US"));
+});
+
+test("phone sheet: collapse is always visible and the tabs follow the ARIA tabs pattern", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  const collapse = sheet.getByRole("button", { name: /Collapse panel|Expand panel/ });
+  await expect(collapse).toBeInViewport();
+  await expect(collapse).toHaveAttribute("aria-expanded", "true");
+  const search = sheet.getByRole("tab", { name: "Search" });
+  await expect(search).toHaveAttribute("aria-selected", "true");
+  expect(await sheet.getByRole("tab").evaluateAll((els) => els.filter((e) => e.getAttribute("tabindex") === "0").length)).toBe(1);
+  await search.focus();
+  await page.keyboard.press("ArrowRight");
+  const filters = sheet.getByRole("tab", { name: "Filters" });
+  await expect(filters).toBeFocused();
+  await expect(filters).toHaveAttribute("aria-selected", "true");
+  await expect(sheet.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", (await filters.getAttribute("id"))!);
+  await page.keyboard.press("End");
+  const ai = sheet.getByRole("tab", { name: "Ask AI, soon" });
+  await expect(ai).toBeFocused();
+  await expect(ai).toContainText("soon");
+  await expect(ai).toBeInViewport();
+  await page.keyboard.press("Home");
+  await expect(search).toBeFocused();
+  // ArrowRight on a collapsed sheet expands it
+  await collapse.click();
+  await expect(sheet.getByRole("tabpanel")).toHaveCount(0);
+  await search.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(sheet.getByRole("tabpanel")).toBeVisible();
+});
+
+test("collapsed sheet: every tab's aria-controls still resolves to an element in the DOM", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  const collapse = sheet.getByRole("button", { name: "Collapse panel" });
+  await collapse.click();
+  await expect(sheet.getByRole("button", { name: "Expand panel" })).toHaveAttribute("aria-expanded", "false");
+  const ids = await sheet.getByRole("tab").evaluateAll((els) => els.map((e) => e.getAttribute("aria-controls")));
+  expect(ids.length).toBe(6);
+  const allPresent = await page.evaluate(
+    (idList) => idList.every((id) => id !== null && document.getElementById(id) !== null),
+    ids,
+  );
+  expect(allPresent).toBe(true);
+});
+
+test("the dock lists Search and Filters first and tags Ask AI as soon", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const dock = page.getByTestId("panel-dock");
+  await expect(dock.getByRole("button")).toHaveText(["Search", "Filters", "Overview", "History", "Owners", /^Ask AI\s*soon$/]);
+  await expect(dock.getByRole("button", { name: "Ask AI, soon" })).toBeVisible();
+});
+
+test("Tab out of the open owner list keeps focus on a page control", async ({ page }) => {
+  await mockApi(page, { "/meta": { status: 200, body: metaWithManyOwners() } });
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).click();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe("BODY");
+});
+
+test("the Fit pill appears after a fly-to and brings back the whole-Earth view", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const fit = page.getByRole("button", { name: "Fit globe" });
+  await expect(fit).toHaveCount(0);
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  await expect(fit).toBeVisible({ timeout: 10_000 });
+  await fit.click();
+  await expect(fit).toHaveCount(0, { timeout: 10_000 });
+});
+
+test("phone: a search fly-to survives an auto-refit triggered by the filter summary pill unmounting", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const sheet = page.getByTestId("mobile-sheet");
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  // Turn off Payloads (the filter-summary pill mounts onto the top bar, growing it by a row) and
+  // let the auto-refit that triggers settle before searching — otherwise the two refits blur
+  // together instead of isolating the one the search's own filter reset must survive.
+  await sheet.getByRole("tab", { name: "Filters" }).click();
+  await sheet.getByRole("button", { name: "Payloads" }).click();
+  await expect(page.getByTestId("filter-summary")).toBeVisible();
+  await page.waitForTimeout(2500); // outlive the 2s fit flight before polling for settlement
+  await expect(async () => {
+    const a = await section.getAttribute("data-earth-cy");
+    await page.waitForTimeout(600);
+    const b = await section.getAttribute("data-earth-cy");
+    expect(a).not.toBeNull();
+    expect(Math.abs(Number(a) - Number(b))).toBeLessThanOrEqual(0.5);
+  }).toPass({ timeout: 10_000 });
+  await sheet.getByRole("tab", { name: "Search" }).click();
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  // selectFromSearch turns Payloads back on: filters return to default, the summary pill
+  // unmounts, and the top bar shrinks a row — the auto-refit this triggers must not hijack the
+  // fly-to already under way (the camera should end up zoomed in on ISS, off-fit, Fit pill shown).
+  await expect(page.getByTestId("filter-summary")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toBeVisible({ timeout: 10_000 });
+});
+
+test("resizing from desktop to phone width re-fits the Earth", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.waitForTimeout(500);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  const topBar = page.getByTestId("globe-topbar");
+  const gap = async () => {
+    const top = Number(await section.getAttribute("data-earth-top"));
+    const bar = await topBar.boundingBox();
+    return bar ? top - (bar.y + bar.height) : null;
+  };
+  // Wait for the auto-refit flight to actually land, not just for the first non-negative read —
+  // that can happen mid-flight, or even under the stale desktop framing before the resize has
+  // been processed at all (data-earth-top is rewritten every 250ms by GlobeScene outside
+  // production; landed means two reads 500ms apart agree).
+  await expect(async () => {
+    const a = await gap();
+    await page.waitForTimeout(500);
+    const b = await gap();
+    expect(a).not.toBeNull();
+    expect(a as number).toBeGreaterThanOrEqual(0);
+    expect(Math.abs((b as number) - (a as number))).toBeLessThanOrEqual(1);
+  }).toPass({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+});
+
+test("a small phone (320x568) fits without leaving the camera pinned at OrbitControls' maxDistance", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  const topBar = page.getByTestId("globe-topbar");
+  await expect
+    .poll(
+      async () => {
+        const top = Number(await section.getAttribute("data-earth-top"));
+        const bar = await topBar.boundingBox();
+        return bar ? top - (bar.y + bar.height) : -1;
+      },
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThanOrEqual(0);
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+});
+
+test("pressing Fit while it has focus moves focus to the globe, not the page body", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  const fit = page.getByRole("button", { name: "Fit globe" });
+  await expect(fit).toBeVisible({ timeout: 10_000 });
+  await fit.focus();
+  await page.keyboard.press("Enter");
+  await expect(fit).toHaveCount(0, { timeout: 10_000 });
+  const active = await page.evaluate(() => ({
+    tag: document.activeElement?.tagName ?? null,
+    label: document.activeElement?.getAttribute("aria-label") ?? null,
+  }));
+  expect(active.tag).not.toBe("BODY");
+  expect(active.label).toBe("Live globe of tracked objects");
+});
+
+test("Reset announces itself and leaves focus on the first filter chip", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(page.getByTestId("announcer")).toHaveText("Filters reset");
+  await expect.poll(() => page.evaluate(() => document.activeElement?.hasAttribute("data-filters-first") ?? false)).toBe(true);
+});
+
+test("Reset announces itself again even when the message repeats", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const announcer = page.getByTestId("announcer");
+
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(announcer).toHaveText("Filters reset");
+  const first = await announcer.textContent();
+
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  // Playwright's toHaveText normalises whitespace, so it can't tell "Filters reset" apart from a
+  // repeat that only changed by a trailing no-break space — poll the raw textContent for that,
+  // right after the click, before it's had a chance to settle to its normalised-equal value.
+  await expect(announcer).toHaveText("Filters reset");
+  await expect.poll(() => announcer.textContent()).not.toBe(first);
+});
+
+test("Reset with Filters hidden focuses the dock's Filters button", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const dockFilters = page.getByTestId("panel-dock").getByRole("button", { name: "Filters" });
+  await dockFilters.click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByRole("button", { name: "Hide Filters" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(dockFilters).toBeFocused();
+});
+
+test("phone: Reset with the Filters body off-screen falls back to focusing the sheet's Filters tab", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  await sheet.getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  // Switching tabs unmounts the Filters body (and its data-filters-first chip) — Reset's own
+  // focus target is gone, so it must fall back to whatever opens Filters (see focusFilters.ts).
+  await sheet.getByRole("tab", { name: "Search" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute("data-opens"))).toBe("filters");
+});
+
+test("no horizontal overflow at 320 px, even with the longest status text", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("not available");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(await pill.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
+test("on short landscape screens the filter summary is compact", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  const summary = page.getByTestId("filter-summary");
+  // The summary group's innerText also includes the sr-only "Opens the Filters panel" description,
+  // so this asserts on the open button's own text and the pill's single-line height instead of the
+  // group's full innerText (see task-5's controller amendment).
+  const openButton = summary.getByRole("button", { name: "Showing All orbits · All owners · all types" });
+  await expect(openButton).toBeVisible();
+  expect((await openButton.innerText()).trim()).toBe("Filtered");
+  await expect(summary.getByRole("button", { name: "Reset filters" })).toBeVisible();
+  const box = (await summary.boundingBox())!;
+  expect(box.height).toBeLessThan(48);
+});
+

@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { PANELS, type PanelId } from "@/lib/panels";
+import { useEffect, useId, useRef, useState } from "react";
+import { PANELS, panelLabel, type PanelId } from "@/lib/panels";
 import { PANEL_CONTENT, type PanelCtx } from "@/components/panels/panelContent";
+import { nextTabIndex } from "@/lib/tabs";
 import { useExplorer } from "@/lib/store";
+import { SoonTag } from "@/components/ui/SoonTag";
 
 /** `showBody` is false during the server render / hydration pass (the layout isn't known yet and
  * the desktop columns hold the panel bodies then — see page.tsx), so only the tab bar paints. */
 export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?: boolean }) {
-  const [active, setActive] = useState<PanelId>("overview");
+  const [active, setActive] = useState<PanelId>("search");
+  const baseId = useId();
+  const tabId = (id: PanelId) => `${baseId}-tab-${id}`;
+  const panelId = `${baseId}-panel`;
+  const tabRefs = useRef<Partial<Record<PanelId, HTMLButtonElement | null>>>({});
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ left: false, right: false });
   const selectedId = useExplorer((s) => s.selectedId);
   // Lives in the store (not local state) so GlobeScene, inside the <Canvas> tree elsewhere in the
   // page, can read it too and keep the globe framed above the sheet while it's open.
@@ -64,33 +72,94 @@ export function MobileSheet({ ctx, showBody = true }: { ctx: PanelCtx; showBody?
     };
   }, [setSheetTop, showBody]);
 
+  // The active tab is always scrolled into view within the strip.
+  useEffect(() => {
+    tabRefs.current[active]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active]);
+
+  // Fades on the strip's edges say "more tabs this way".
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const update = () => {
+      const left = el.scrollLeft > 2;
+      const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+      setFade((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, []);
+
+  const select = (id: PanelId) => {
+    setActive(id);
+    setOpen(true);
+  };
+  const onTabKey = (e: React.KeyboardEvent, i: number) => {
+    const next = nextTabIndex(e.key, i, PANELS.length);
+    if (next === null) return;
+    e.preventDefault();
+    select(PANELS[next].id);
+    tabRefs.current[PANELS[next].id]?.focus();
+  };
+
   return (
     <div ref={sheetRef} data-testid="mobile-sheet" className="panel fixed inset-x-2 bottom-2 z-20 mx-auto max-h-[60dvh] max-w-[640px] !p-0 short:max-h-[50dvh] wide:hidden">
-      <div role="tablist" aria-label="Panels" className="flex gap-1 overflow-x-auto border-b-2 border-line px-2 py-2">
-        {PANELS.map((p) => (
-          <button
-            key={p.id}
-            role="tab"
-            type="button"
-            aria-selected={active === p.id}
-            onClick={() => {
-              setActive(p.id);
-              setOpen(true);
-            }}
-            className={`shrink-0 rounded-full px-3 py-1 text-[13px] ${active === p.id ? "bg-[#1c1c1c] text-ink" : "text-ink-2"}`}
-          >
-            {p.title}
-          </button>
-        ))}
-        <button type="button" onClick={() => setOpen(!open)} aria-label={open ? "Collapse panel" : "Expand panel"} className="ml-auto shrink-0 px-2 text-ink-2">
+      <div className="flex items-stretch border-b-2 border-line">
+        <div className="relative min-w-0 flex-1">
+          <div ref={stripRef} role="tablist" aria-label="Panels" className="flex gap-1 overflow-x-auto px-2 py-1.5 [scrollbar-width:none]">
+            {PANELS.map((p, i) => (
+              <button
+                key={p.id}
+                ref={(el) => {
+                  tabRefs.current[p.id] = el;
+                }}
+                id={tabId(p.id)}
+                role="tab"
+                type="button"
+                data-opens={p.id}
+                aria-label={panelLabel(p)}
+                aria-selected={active === p.id}
+                aria-controls={panelId}
+                tabIndex={active === p.id ? 0 : -1}
+                onClick={() => select(p.id)}
+                onKeyDown={(e) => onTabKey(e, i)}
+                className={`flex min-h-10 shrink-0 items-center rounded-full px-3 text-[13px] ${active === p.id ? "bg-[#1c1c1c] text-ink" : "text-ink-2"}`}
+              >
+                {p.title}
+                {p.soon && <SoonTag />}
+              </button>
+            ))}
+          </div>
+          {fade.left && <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-card to-transparent" />}
+          {fade.right && <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-card to-transparent" />}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-label={open ? "Collapse panel" : "Expand panel"}
+          className="flex h-11 w-11 shrink-0 self-center items-center justify-center border-l-2 border-line text-ink-2"
+        >
           {open ? "▾" : "▴"}
         </button>
       </div>
-      {open && showBody && (
-        <div role="tabpanel" aria-label={PANELS.find((p) => p.id === active)!.title} className="max-h-[calc(60dvh-52px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-52px)]">
-          {PANEL_CONTENT[active](ctx)}
-        </div>
-      )}
+      <div
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={tabId(active)}
+        tabIndex={0}
+        hidden={!(open && showBody)}
+        className="max-h-[calc(60dvh-58px)] overflow-y-auto p-3 short:max-h-[calc(50dvh-58px)]"
+      >
+        {open && showBody && PANEL_CONTENT[active](ctx)}
+      </div>
     </div>
   );
 }

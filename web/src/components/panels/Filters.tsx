@@ -14,8 +14,15 @@ export function Filters({ meta }: { meta: Meta | null }) {
     <div>
       <p className="label">Object types</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {TYPE_ORDER.map((t) => (
-          <button key={t} type="button" aria-pressed={types.includes(t)} className={chip(types.includes(t))} onClick={() => toggleType(t)}>
+        {TYPE_ORDER.map((t, i) => (
+          <button
+            key={t}
+            type="button"
+            data-filters-first={i === 0 ? "" : undefined}
+            aria-pressed={types.includes(t)}
+            className={chip(types.includes(t))}
+            onClick={() => toggleType(t)}
+          >
             <span className="mr-1.5 inline-block h-2 w-2 rounded-[2px]" style={{ background: CHART_COLORS[t] }} />
             {TYPE_LABELS[t]}
           </button>

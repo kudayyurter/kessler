@@ -211,3 +211,35 @@ describe("selection and filter actions", () => {
     expect(useExplorer.getState().ownerDirectory).toBe(list);
   });
 });
+
+describe("data tables", () => {
+  it("start closed and toggle per chart", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false });
+    useExplorer.getState().toggleDataTable("owners");
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true });
+  });
+});
+
+describe("fit globe", () => {
+  it("tracks whether the view is off the fitted framing and counts fit requests", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().offFit).toBe(false);
+    useExplorer.getState().setOffFit(true);
+    expect(useExplorer.getState().offFit).toBe(true);
+    expect(useExplorer.getState().fitRequest).toBe(0);
+    useExplorer.getState().requestFit();
+    useExplorer.getState().requestFit();
+    expect(useExplorer.getState().fitRequest).toBe(2);
+  });
+});
+
+describe("announcements", () => {
+  it("replaces the text and counts announcements", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().announcement).toBeNull();
+    useExplorer.getState().announce("Filters reset");
+    useExplorer.getState().announce("Filters reset");
+    expect(useExplorer.getState().announcement).toEqual({ text: "Filters reset", n: 2 });
+  });
+});

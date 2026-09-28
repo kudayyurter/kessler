@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { earthRadiusPx, initialDistance, sheetInitialDistance, sheetViewOffset } from "@/lib/camera";
+import { earthRadiusPx, fittedDistance, initialDistance, isOffFit, sheetInitialDistance, sheetViewOffset, shouldRefit, type FitState } from "@/lib/camera";
 import { simClock } from "@/lib/clock";
 import type { OrbitRecord } from "@/lib/snapshot";
 import { useExplorer } from "@/lib/store";
@@ -55,14 +55,21 @@ export function GlobeScene({
   const sheetTop = useExplorer((s) => s.mobileSheetTop);
   const topBarBottom = useExplorer((s) => s.topBarBottom);
   const sheetLayout = useIsMobile();
+  // The whole-Earth camera distance for the current layout — null in the sheet layout before the
+  // top bar has been measured. Recomputed every render (cheap trig); consumed by the fit-request
+  // and auto-refit effects below and by the off-fit check inside useFrame.
+  const fitted = fittedDistance(sheetLayout, size.width, size.height, topBarBottom);
   // Sparse: index 0 = LEO, 1 = HIGH. A group whose snapshot hasn't loaded (or errored) yet
   // leaves a hole here rather than a function — locate skips holes instead of calling them.
   const locators = useRef<(Locator | undefined)[]>([]);
   // Sparse by group index (0 = LEO, 1 = HIGH), same convention as `locators` above — fed by
   // Objects' onLabelSource and read every tick by LabelDriver.
   const labelSources = useRef<(LabelSource | undefined)[]>([]);
-  // The initial camera distance is set exactly once; afterwards zoom belongs to the user.
+  // The initial camera distance is set exactly once; afterwards zoom belongs to the user — except
+  // for the Fit button and the auto-refit effect below, which explicitly retarget the camera.
   const positioned = useRef(false);
+  // Throttle for the off-fit check inside useFrame — see below.
+  const offFitElapsed = useRef(0);
 
   useEffect(() => {
     if (positioned.current) return;
@@ -107,22 +114,84 @@ export function GlobeScene({
   // call, or the cleanup effect below) reliably stops a stale completion from running even if the
   // underlying tween's own cancellation doesn't guarantee that on its own.
   const startFlight = useCallback(
-    (found: THREE.Vector3) => {
+    (target: THREE.Vector3, distance: number, arc = true) => {
       fly.current?.cancel();
       fly.current = null;
       if (controls.current) controls.current.enabled = false;
       let live = true;
-      const handle = flyTo(camera, found, Math.max(1.35, found.length() + 0.45), () => {
+      const handle = flyTo(camera, target, distance, () => {
         if (!live) return;
         live = false;
         fly.current = null;
         resumeControls();
-      });
+      }, arc);
       // Reduced motion already ran the callback above, synchronously — nothing left to store.
       if (live) fly.current = { cancel: () => { live = false; handle.cancel(); } };
     },
     [camera, resumeControls],
   );
+
+  // Whether the flight currently in progress (if any) is a fit flight (auto-refit or the Fit
+  // button) rather than a selection fly-to. The auto-refit effect below uses this two ways: while
+  // it's false and a flight is running (a selection fly-to under way), the effect skips refitting
+  // entirely — it only records the new measurement — so a coincidental top-bar reflow (e.g. the
+  // filter summary pill mounting/unmounting around a search selection) can never hijack the
+  // fly-to and strand it at the fitted distance instead of the selected object. While it's true, a
+  // fresher `fitted` measurement may retarget that same fit flight in place instead of racing a
+  // second one. Set immediately before every startFlight call below.
+  const fitFlightActive = useRef(false);
+  // The distance the fit flight currently in progress (if any) is actually heading to — set
+  // whenever a fit flight starts (Fit button or auto-refit). The auto-refit effect below compares
+  // a fresher `fitted` measurement against this (not the previous measurement) so two consecutive
+  // sub-5% drifts that add up to an off-fit target still trigger a retarget.
+  const fitTarget = useRef<number | null>(null);
+
+  // Fit on request (the "⤢ Fit globe" pill — see FitButton/store.ts's fitRequest): keeps the
+  // current direction, only the distance changes. `startFlight` already cancels a running flight,
+  // so pressing Fit mid fly-to cancels that flight and starts the fit flight cleanly.
+  const fitRequest = useExplorer((s) => s.fitRequest);
+  const seenFit = useRef(fitRequest);
+  useEffect(() => {
+    if (fitRequest === seenFit.current || fitted === null) return;
+    seenFit.current = fitRequest;
+    fitFlightActive.current = true;
+    fitTarget.current = fitted;
+    startFlight(camera.position.clone(), fitted, false);
+  }, [fitRequest, fitted, camera, startFlight]);
+
+  // Auto-refit on a layout switch (desktop <-> sheet), and on a sheet top-bar change while the
+  // camera was still at the old fitted distance (never fights the user's own zoom — see
+  // shouldRefit). Placed after startFlight and the initial-positioning effect above, so
+  // `positioned.current` is already set by the time this effect first runs.
+  //
+  // The top bar can settle over a couple of ResizeObserver callbacks right after a layout switch
+  // (the readout/pill row reflowing), so `fitted` may still refine slightly while a fit flight
+  // from an earlier callback is already under way. shouldRefit alone would decline to restart it
+  // (the camera, mid-flight, isn't at the *previous* fitted distance, so it looks like it could be
+  // the user's own zoom) — but OrbitControls is disabled for the whole flight, so the user cannot
+  // be zooming; it's safe to just retarget the same flight at the refined distance. Only a fit
+  // flight (never a selection fly-to) is retargeted this way.
+  const lastFit = useRef<FitState | null>(null);
+  useEffect(() => {
+    if (!positioned.current || fitted === null) return;
+    const next = { sheet: sheetLayout, fitted };
+    // A selection fly-to is running: never contest it for the camera, just keep the measurement
+    // current so the comparison is accurate once the flight ends.
+    if (fly.current !== null && !fitFlightActive.current) {
+      lastFit.current = next;
+      return;
+    }
+    const prev = lastFit.current;
+    const midFitFlight = fly.current !== null && fitFlightActive.current;
+    const refit = midFitFlight ? fitTarget.current !== null && isOffFit(fitted, fitTarget.current) : shouldRefit(prev, next, camera.position.length());
+    if (refit) {
+      fitFlightActive.current = true;
+      fitTarget.current = fitted;
+      startFlight(camera.position.clone(), fitted, false);
+    }
+    lastFit.current = next;
+  }, [sheetLayout, fitted, camera, startFlight]);
+
   // A new selection (or clearing it) cancels a flight still in progress.
   useEffect(
     () => () => {
@@ -166,8 +235,18 @@ export function GlobeScene({
         st.setSelectionOnGlobe("absent");
       } else if (found !== "pending") {
         st.setSelectionOnGlobe("shown");
-        startFlight(found);
+        fitFlightActive.current = false;
+        startFlight(found, Math.max(1.35, found.length() + 0.45));
       }
+    }
+
+    // Off-fit detection, throttled to 250 ms. Skipped while a flight is running so an automatic
+    // re-fit (or the Fit button's own flight) never flashes the pill on and back off.
+    offFitElapsed.current += dt;
+    if (offFitElapsed.current >= 0.25 && fitted !== null && positioned.current && fly.current === null) {
+      offFitElapsed.current = 0;
+      const off = isOffFit(camera.position.length(), fitted);
+      if (st.offFit !== off) st.setOffFit(off);
     }
 
     // Test-only (never in production): where the Earth is rendered, throttled to 250 ms.
@@ -189,7 +268,11 @@ export function GlobeScene({
       <Earth />
       {leo && <Objects records={leo} group="LEO" onReady={onReadyLeo} active={active} onLabelSource={onLeoLabels} />}
       {high && <Objects records={high} group="HIGH" onReady={onReadyHigh} active={active} onLabelSource={onHighLabels} />}
-      <OrbitControls ref={controls} enableDamping enablePan={false} minDistance={1.12} maxDistance={12} zoomSpeed={0.8} />
+      {/* maxDistance must never clamp the fitted whole-Earth distance itself (small phones, a short
+          gap above the sheet, can need well past 12) — drei calls controls.update() every frame,
+          and three-stdlib's own radius clamp would otherwise pin the camera inside that distance,
+          leaving the Fit pill shown at rest and any fit flight snapping back the moment it lands. */}
+      <OrbitControls ref={controls} enableDamping enablePan={false} minDistance={1.12} maxDistance={Math.max(12, (fitted ?? 0) * 1.1)} zoomSpeed={0.8} />
       <Picker sources={labelSources} />
       {labelsRef && <LabelDriver sources={labelSources} container={labelsRef} sheetLayout={sheetLayout} />}
     </>

@@ -7,6 +7,7 @@ import type { GroupName } from "@/lib/globeData";
 import { useExplorer } from "@/lib/store";
 import { subsolarPoint } from "@/lib/sun";
 import { FilterSummary } from "@/components/globe/FilterSummary";
+import { FitButton } from "@/components/globe/FitButton";
 import { GlobeErrorBoundary } from "@/components/globe/GlobeErrorBoundary";
 import { GlobeScene } from "@/components/globe/GlobeScene";
 import { StatusPill } from "@/components/globe/StatusPill";
@@ -66,6 +67,7 @@ export function GlobeSection() {
   const setTopBarBottom = useExplorer((s) => s.setTopBarBottom);
   const setData = useExplorer((s) => s.setData);
   const setHighStatus = useExplorer((s) => s.setHighStatus);
+  const offFit = useExplorer((s) => s.offFit);
   const orbits = useExplorer((s) => s.orbits);
   const globe = useGlobeData(orbits.high);
   const leoStatus = globe.groups.LEO.status;
@@ -146,8 +148,26 @@ export function GlobeSection() {
     };
   }, [setTopBarBottom]);
 
+  // Set by FitButton's onClick when it was activated while focused; consumed below once offFit
+  // flips back to false (the pill unmounts) to keep focus on the page instead of letting it fall
+  // through to <body> — browsers move focus to <body> synchronously when the focused element is
+  // removed from the DOM, before any effect runs, so this checks document.activeElement rather
+  // than depending on a blur/focusout event (which isn't guaranteed to fire on removal).
+  const fitActivatedWhileFocused = useRef(false);
+  useEffect(() => {
+    if (offFit || !fitActivatedWhileFocused.current) return;
+    fitActivatedWhileFocused.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) sectionRef.current?.focus();
+  }, [offFit]);
+
   return (
-    <section ref={sectionRef} className="fixed inset-0" aria-label="Live globe of tracked objects">
+    <section
+      ref={sectionRef}
+      tabIndex={-1}
+      className="fixed inset-0 outline-none"
+      aria-label="Live globe of tracked objects"
+    >
       {webgl && !broken && (
         <GlobeErrorBoundary onError={() => setRenderFailed(true)}>
           <Canvas
@@ -192,6 +212,9 @@ export function GlobeSection() {
           {/* Hidden without WebGL: the "can't show the 3D globe" message already explains the page. */}
           {webgl === true && !broken && (
             <StatusPill input={{ groups: globe.groups, wanted, generatedAt: globe.generatedAt }} onRetry={globe.retry} />
+          )}
+          {webgl === true && !broken && (
+            <FitButton onActivateWhileFocused={() => { fitActivatedWhileFocused.current = true; }} />
           )}
           <FilterSummary />
         </div>

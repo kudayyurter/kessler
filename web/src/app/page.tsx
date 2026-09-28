@@ -13,6 +13,7 @@ import { Panel } from "@/components/layout/Panel";
 import { PanelColumn } from "@/components/layout/PanelColumn";
 import { PanelDock } from "@/components/layout/PanelDock";
 import { PANEL_CONTENT, type BarsLoad, type Load, type PanelCtx } from "@/components/panels/panelContent";
+import { Announcer } from "@/components/ui/Announcer";
 
 // GlobeSection pulls in three/R3F/satellite.js — by far the largest slice of the
 // page's JS — and only ever renders client-side anyway (it probes WebGL support in an effect and
@@ -118,6 +119,7 @@ export default function Explorer() {
   );
   return (
     <main className="h-dvh overflow-hidden">
+      <Announcer />
       <GlobeSection />
       {sheet !== false && <MobileSheet ctx={ctx} showBody={sheet === true} />}
       {sheet !== true && (

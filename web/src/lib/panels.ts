@@ -1,13 +1,19 @@
 export type PanelId = "overview" | "search" | "history" | "owners" | "filters" | "chat";
 
-export const PANELS: readonly { id: PanelId; title: string }[] = [
-  { id: "overview", title: "Overview" },
+export const PANELS: readonly { id: PanelId; title: string; soon?: boolean }[] = [
   { id: "search", title: "Search" },
+  { id: "filters", title: "Filters" },
+  { id: "overview", title: "Overview" },
   { id: "history", title: "History" },
   { id: "owners", title: "Owners" },
-  { id: "filters", title: "Filters" },
-  { id: "chat", title: "Ask AI" },
+  { id: "chat", title: "Ask AI", soon: true },
 ];
+
+/** The accessible name for a panel's dock button / sheet tab — undefined (use the text) unless it
+ * carries the visual-only "soon" tag. */
+export function panelLabel(p: { title: string; soon?: boolean }): string | undefined {
+  return p.soon ? `${p.title}, soon` : undefined;
+}
 
 export const DEFAULT_VISIBILITY: Record<PanelId, boolean> = {
   overview: true, search: true, history: true, owners: true, filters: false, chat: false,
