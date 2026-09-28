@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { earthRadiusPx, initialDistance, sheetInitialDistance, sheetMaxFraction, sheetViewOffset, sheetWorstCaseHeight } from "@/lib/camera";
+import { earthRadiusPx, FIT_TOLERANCE, fittedDistance, initialDistance, isOffFit, sheetInitialDistance, sheetMaxFraction, shouldRefit, sheetViewOffset, sheetWorstCaseHeight } from "@/lib/camera";
 
 // Replays three.js PerspectiveCamera.updateProjectionMatrix's view-offset math (near=1, so the
 // near-plane bounds double as tangent values).
@@ -106,5 +106,49 @@ describe("earthRadiusPx", () => {
     // d = 1/sin(12°): silhouette half-angle 12°, tan(12°)/tan(20°) of half the screen height.
     const d = 1 / Math.sin((12 * Math.PI) / 180);
     expect(earthRadiusPx(d, 900)).toBeCloseTo((Math.tan((12 * Math.PI) / 180) / Math.tan((20 * Math.PI) / 180)) * 450, 6);
+  });
+});
+
+describe("fittedDistance", () => {
+  it("uses the desktop framing outside the sheet layout", () => {
+    expect(fittedDistance(false, 1280, 720, null)).toBe(initialDistance(1280 / 720));
+  });
+
+  it("uses the sheet framing, and waits for the top bar", () => {
+    expect(fittedDistance(true, 390, 844, 60)).toBe(sheetInitialDistance(390, 844, 60));
+    expect(fittedDistance(true, 390, 844, null)).toBeNull();
+  });
+});
+
+describe("isOffFit", () => {
+  it("is off only beyond the tolerance either way", () => {
+    expect(FIT_TOLERANCE).toBe(0.05);
+    expect(isOffFit(3.1, 3)).toBe(false);
+    expect(isOffFit(3.2, 3)).toBe(true);
+    expect(isOffFit(2.8, 3)).toBe(true);
+  });
+});
+
+describe("shouldRefit", () => {
+  it("never on the first measurement", () => {
+    expect(shouldRefit(null, { sheet: false, fitted: 3 }, 3)).toBe(false);
+  });
+
+  it("always when switching between desktop and sheet layouts", () => {
+    expect(shouldRefit({ sheet: false, fitted: 3 }, { sheet: true, fitted: 4 }, 1.5)).toBe(true);
+    expect(shouldRefit({ sheet: true, fitted: 4 }, { sheet: false, fitted: 3 }, 4)).toBe(true);
+  });
+
+  it("follows a sheet top-bar change when the camera was at the old fitted distance", () => {
+    expect(shouldRefit({ sheet: true, fitted: 4 }, { sheet: true, fitted: 4.5 }, 4)).toBe(true);
+  });
+
+  it("keeps a user-zoomed camera when only the top bar changes", () => {
+    expect(shouldRefit({ sheet: true, fitted: 4 }, { sheet: true, fitted: 4.5 }, 1.8)).toBe(false);
+  });
+
+  it("ignores small changes and desktop resizes", () => {
+    expect(shouldRefit({ sheet: true, fitted: 4 }, { sheet: true, fitted: 4.1 }, 4)).toBe(false);
+    expect(shouldRefit({ sheet: false, fitted: 3 }, { sheet: false, fitted: 3.6 }, 3)).toBe(false);
   });
 });
