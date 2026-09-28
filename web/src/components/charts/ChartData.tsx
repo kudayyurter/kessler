@@ -4,7 +4,7 @@ import { useId } from "react";
 import { historyTable, ownersTable } from "@/lib/chartTables";
 import { fmtInt } from "@/lib/format";
 import { useExplorer } from "@/lib/store";
-import { TYPE_LABELS, type BreakdownResponse, type ObjectType, type OwnerSummary, type TimeseriesResponse } from "@/lib/types";
+import { TYPE_LABELS, type BreakdownResponse, type OwnerSummary, type TimeseriesResponse } from "@/lib/types";
 
 /** "View data" / "Hide data" under a chart: the same numbers as a real table for keyboard and
  * screen-reader users. The scroll area is focusable so a keyboard can scroll it. */
@@ -70,15 +70,13 @@ export function OwnersDataTable({
   owners,
   selected,
   rankFor,
-  types,
 }: {
   data: BreakdownResponse;
   owners: OwnerSummary[];
   selected: string | null;
   rankFor: string | null;
-  types: readonly ObjectType[];
 }) {
-  const t = ownersTable(data, owners, selected, rankFor, types);
+  const t = ownersTable(data, owners, selected, rankFor);
   return (
     <table className="w-full border-collapse font-mono text-[12px]">
       <caption className="px-2 py-1 text-left text-[11px] text-ink-3">Objects in orbit by owner and type</caption>

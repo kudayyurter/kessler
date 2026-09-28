@@ -45,7 +45,7 @@ function OwnersChart({ c }: { c: PanelCtx }) {
       </div>
       {!c.bars.error && c.bars.data && (
         <DataDisclosure which="owners" label="Owners data">
-          <OwnersDataTable data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} rankFor={c.bars.rankFor} types={types} />
+          <OwnersDataTable data={c.bars.data} owners={c.meta.data?.owners ?? []} selected={selected} rankFor={c.bars.rankFor} />
         </DataDisclosure>
       )}
     </div>
