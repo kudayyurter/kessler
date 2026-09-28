@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_VISIBILITY, loadVisibility, PANELS, saveVisibility, STORAGE_KEY } from "@/lib/panels";
+import { DEFAULT_VISIBILITY, loadVisibility, PANELS, panelLabel, saveVisibility, STORAGE_KEY } from "@/lib/panels";
 
 const mem = () => {
   const m = new Map<string, string>();
@@ -8,8 +8,13 @@ const mem = () => {
 
 describe("panels", () => {
   it("lists six panels in dock order with the spec defaults", () => {
-    expect(PANELS.map((p) => p.id)).toEqual(["overview", "search", "history", "owners", "filters", "chat"]);
+    expect(PANELS.map((p) => p.id)).toEqual(["search", "filters", "overview", "history", "owners", "chat"]);
     expect(DEFAULT_VISIBILITY).toEqual({ overview: true, search: true, history: true, owners: true, filters: false, chat: false });
+  });
+
+  it("names a 'soon' panel's button with its tag", () => {
+    expect(panelLabel({ title: "Ask AI", soon: true })).toBe("Ask AI, soon");
+    expect(panelLabel({ title: "Search" })).toBeUndefined();
   });
 
   it("round-trips through storage", () => {

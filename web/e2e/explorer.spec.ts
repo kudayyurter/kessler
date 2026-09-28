@@ -497,8 +497,8 @@ for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 7
     await mockApi(page);
     await page.goto("/");
     await expect(page.locator("canvas")).toBeVisible();
-    await expect(page.locator("path[data-series], [data-testid=tile-PAY]").first()).toBeVisible({ timeout: 10_000 });
     const sheetLayout = w < 1024 || h < 560;
+    await expect(sheetLayout ? page.getByLabel("Find an object") : page.locator("path[data-series]").first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("mobile-sheet")).toHaveCount(sheetLayout ? 1 : 0);
     await expect(page.getByTestId("panel-dock")).toHaveCount(sheetLayout ? 0 : 1);
     await page.waitForTimeout(500); // let charts/ResizeObservers settle
@@ -994,4 +994,54 @@ test("a narrow History chart shows current values in its legend", async ({ page 
   const ts = JSON.parse(fx("api/timeseries.json").toString());
   const pay = ts.series.find((s: { key: string }) => s.key === "PAY").values.at(-1) as number;
   await expect(page.getByTestId("history-legend")).toContainText(pay.toLocaleString("en-US"));
+});
+
+test("phone sheet: collapse is always visible and the tabs follow the ARIA tabs pattern", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  const sheet = page.getByTestId("mobile-sheet");
+  const collapse = sheet.getByRole("button", { name: /Collapse panel|Expand panel/ });
+  await expect(collapse).toBeInViewport();
+  await expect(collapse).toHaveAttribute("aria-expanded", "true");
+  const search = sheet.getByRole("tab", { name: "Search" });
+  await expect(search).toHaveAttribute("aria-selected", "true");
+  expect(await sheet.getByRole("tab").evaluateAll((els) => els.filter((e) => e.getAttribute("tabindex") === "0").length)).toBe(1);
+  await search.focus();
+  await page.keyboard.press("ArrowRight");
+  const filters = sheet.getByRole("tab", { name: "Filters" });
+  await expect(filters).toBeFocused();
+  await expect(filters).toHaveAttribute("aria-selected", "true");
+  await expect(sheet.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", (await filters.getAttribute("id"))!);
+  await page.keyboard.press("End");
+  const ai = sheet.getByRole("tab", { name: "Ask AI, soon" });
+  await expect(ai).toBeFocused();
+  await expect(ai).toContainText("soon");
+  await expect(ai).toBeInViewport();
+  await page.keyboard.press("Home");
+  await expect(search).toBeFocused();
+  // ArrowRight on a collapsed sheet expands it
+  await collapse.click();
+  await expect(sheet.getByRole("tabpanel")).toHaveCount(0);
+  await search.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(sheet.getByRole("tabpanel")).toBeVisible();
+});
+
+test("the dock lists Search and Filters first and tags Ask AI as soon", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const dock = page.getByTestId("panel-dock");
+  await expect(dock.getByRole("button")).toHaveText(["Search", "Filters", "Overview", "History", "Owners", /^Ask AI\s*soon$/]);
+  await expect(dock.getByRole("button", { name: "Ask AI, soon" })).toBeVisible();
+});
+
+test("Tab out of the open owner list keeps focus on a page control", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("combobox", { name: "Owner" }).click();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe("BODY");
 });

@@ -88,20 +88,23 @@ export function OwnerPicker({
   }, [open]);
 
   // Arrow-key navigation used to move `active` without ever scrolling its row into view, so
-  // holding ArrowDown just walked off the bottom of the (still `max-h-64 overflow-auto`) list.
-  // Keyed on `moveTick` (bumped only by `move`, the arrow-key handler) rather than on `active`
-  // itself, so a hover-driven change to `active` (see onPointerMove below) never triggers this —
-  // scrolling the list out from under a pointer that only rested there, without pressing a key,
-  // is its own kind of hijack.
+  // holding ArrowDown just walked off the bottom of the (still `h-64 overflow-auto`) list. Also
+  // runs when the list opens (so the initially-active row, e.g. the selected owner, starts in
+  // view) and while typing (so the first match stays in view as `active` resets to 0 on every
+  // keystroke). Keyed on `[moveTick, open, query]` rather than on `active` itself, so a
+  // hover-driven change to `active` (see onPointerMove below) never triggers this — scrolling the
+  // list out from under a pointer that only rested there, without pressing a key, is its own kind
+  // of hijack.
   useEffect(() => {
-    if (!open || moveTick === 0) return;
+    if (!open) return;
     const o = options[active];
     if (!o) return;
     document.getElementById(optionDomId(o))?.scrollIntoView({ block: "nearest" });
-    // Deliberately keyed on `moveTick` alone (see above) — `open`/`active`/`options`/`listId` are
-    // read for their current values, not to re-run this effect when they change on their own.
+    // Deliberately keyed on `[moveTick, open, query]` alone (see above) — `active`/`options`/
+    // `listId` are read for their current values, not to re-run this effect when they change on
+    // their own.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moveTick]);
+  }, [moveTick, open, query]);
 
   // ARIA: a single owner can appear twice in the ungrouped list (once under "Largest", once again
   // under "A–Z") — only the first occurrence may claim aria-selected (a listbox has one selected
@@ -210,11 +213,15 @@ export function OwnerPicker({
           id={listId}
           role="listbox"
           aria-label="Owners"
+          // Otherwise a scrollable list is a Tab stop in Chrome, and focusing it blurs the input,
+          // which closes the list (onBlur -> close()) and drops focus to <body> since the list is
+          // then removed from the DOM out from under the focus that just landed on it.
+          tabIndex={-1}
           // Anywhere in the list — the scrollbar, a group heading, the "no match" row, not just an
           // option — mousedown must not blur the input first, or the click that follows never lands
           // (blur closes the list, click then hits whatever is left behind).
           onMouseDown={(e) => e.preventDefault()}
-          className="mt-1 max-h-64 overflow-auto rounded-[10px] border-2 border-line bg-[#121212] py-1"
+          className="mt-1 h-64 overflow-auto rounded-[10px] border-2 border-line bg-[#121212] py-1"
         >
           {options.length === 0 ? (
             <li role="option" aria-selected={false} aria-disabled="true" className="px-3 py-1.5 text-[13px] text-ink-3">

@@ -1,7 +1,8 @@
 "use client";
 
-import { PANELS } from "@/lib/panels";
+import { panelLabel, PANELS } from "@/lib/panels";
 import { useExplorer } from "@/lib/store";
+import { SoonTag } from "@/components/ui/SoonTag";
 
 export function PanelDock() {
   const panels = useExplorer((s) => s.panels);
@@ -12,11 +13,14 @@ export function PanelDock() {
         <button
           key={p.id}
           type="button"
+          data-opens={p.id}
+          aria-label={panelLabel(p)}
           aria-pressed={panels[p.id]}
           onClick={() => togglePanel(p.id)}
           className={`rounded-full border px-3 py-1 text-[13px] backdrop-blur ${panels[p.id] ? "border-ink/70 bg-[#141414]/90 text-ink" : "border-line bg-[#0b0b0b]/80 text-ink-3"}`}
         >
           {p.title}
+          {p.soon && <SoonTag />}
         </button>
       ))}
     </nav>
