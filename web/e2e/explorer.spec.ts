@@ -1067,15 +1067,66 @@ test("resizing from desktop to phone width re-fits the Earth", async ({ page }) 
   await page.waitForTimeout(500);
   await page.setViewportSize({ width: 390, height: 844 });
   const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  const topBar = page.getByTestId("globe-topbar");
+  const gap = async () => {
+    const top = Number(await section.getAttribute("data-earth-top"));
+    const bar = await topBar.boundingBox();
+    return bar ? top - (bar.y + bar.height) : null;
+  };
+  // Wait for the auto-refit flight to actually land, not just for the first non-negative read —
+  // that can happen mid-flight, or even under the stale desktop framing before the resize has
+  // been processed at all (data-earth-top is rewritten every 250ms by GlobeScene outside
+  // production; landed means two reads 500ms apart agree).
+  await expect(async () => {
+    const a = await gap();
+    await page.waitForTimeout(500);
+    const b = await gap();
+    expect(a).not.toBeNull();
+    expect(a as number).toBeGreaterThanOrEqual(0);
+    expect(Math.abs((b as number) - (a as number))).toBeLessThanOrEqual(1);
+  }).toPass({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
+});
+
+test("a small phone (320x568) fits without leaving the camera pinned at OrbitControls' maxDistance", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  const section = page.locator("section[aria-label='Live globe of tracked objects']");
+  const topBar = page.getByTestId("globe-topbar");
   await expect
     .poll(
       async () => {
         const top = Number(await section.getAttribute("data-earth-top"));
-        const bar = await page.getByTestId("globe-topbar").boundingBox();
+        const bar = await topBar.boundingBox();
         return bar ? top - (bar.y + bar.height) : -1;
       },
       { timeout: 10_000 },
     )
     .toBeGreaterThanOrEqual(0);
+  await page.waitForTimeout(500);
   await expect(page.getByRole("button", { name: "Fit globe" })).toHaveCount(0);
 });
+
+test("pressing Fit while it has focus moves focus to the globe, not the page body", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.getByLabel("Find an object").fill("ISS");
+  await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
+  const fit = page.getByRole("button", { name: "Fit globe" });
+  await expect(fit).toBeVisible({ timeout: 10_000 });
+  await fit.focus();
+  await page.keyboard.press("Enter");
+  await expect(fit).toHaveCount(0, { timeout: 10_000 });
+  const active = await page.evaluate(() => ({
+    tag: document.activeElement?.tagName ?? null,
+    label: document.activeElement?.getAttribute("aria-label") ?? null,
+  }));
+  expect(active.tag).not.toBe("BODY");
+  expect(active.label).toBe("Live globe of tracked objects");
+});
+

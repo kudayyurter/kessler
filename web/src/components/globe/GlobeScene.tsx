@@ -250,7 +250,11 @@ export function GlobeScene({
       <Earth />
       {leo && <Objects records={leo} group="LEO" onReady={onReadyLeo} active={active} onLabelSource={onLeoLabels} />}
       {high && <Objects records={high} group="HIGH" onReady={onReadyHigh} active={active} onLabelSource={onHighLabels} />}
-      <OrbitControls ref={controls} enableDamping enablePan={false} minDistance={1.12} maxDistance={12} zoomSpeed={0.8} />
+      {/* maxDistance must never clamp the fitted whole-Earth distance itself (small phones, a short
+          gap above the sheet, can need well past 12) — drei calls controls.update() every frame,
+          and three-stdlib's own radius clamp would otherwise pin the camera inside that distance,
+          leaving the Fit pill shown at rest and any fit flight snapping back the moment it lands. */}
+      <OrbitControls ref={controls} enableDamping enablePan={false} minDistance={1.12} maxDistance={Math.max(12, (fitted ?? 0) * 1.1)} zoomSpeed={0.8} />
       <Picker sources={labelSources} />
       {labelsRef && <LabelDriver sources={labelSources} container={labelsRef} sheetLayout={sheetLayout} />}
     </>
