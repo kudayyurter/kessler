@@ -1140,6 +1140,27 @@ test("Reset announces itself and leaves focus on the first filter chip", async (
   await expect.poll(() => page.evaluate(() => document.activeElement?.hasAttribute("data-filters-first") ?? false)).toBe(true);
 });
 
+test("Reset announces itself again even when the message repeats", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  const announcer = page.getByTestId("announcer");
+
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(announcer).toHaveText("Filters reset");
+  const first = await announcer.textContent();
+
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  // Playwright's toHaveText normalises whitespace, so it can't tell "Filters reset" apart from a
+  // repeat that only changed by a trailing no-break space — read the raw textContent for that.
+  await expect(announcer).toHaveText("Filters reset");
+  const second = await announcer.textContent();
+
+  expect(second).not.toBe(first);
+});
+
 test("Reset with Filters hidden focuses the dock's Filters button", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
