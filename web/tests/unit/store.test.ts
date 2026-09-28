@@ -211,3 +211,12 @@ describe("selection and filter actions", () => {
     expect(useExplorer.getState().ownerDirectory).toBe(list);
   });
 });
+
+describe("data tables", () => {
+  it("start closed and toggle per chart", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false });
+    useExplorer.getState().toggleDataTable("owners");
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true });
+  });
+});

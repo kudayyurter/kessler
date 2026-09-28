@@ -41,6 +41,8 @@ interface ExplorerState extends Filters {
   // ObjectCard reads it so a MEO/GEO/HEO selection that can never resolve (the group failed or
   // came back missing) gets a reason instead of sitting "pending" forever. See noPositionReason.
   highStatus: GroupStatus;
+  // Whether each chart's "View data" disclosure (see ChartData.tsx) is open, per chart.
+  dataTablesOpen: { history: boolean; owners: boolean };
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -63,6 +65,7 @@ interface ExplorerState extends Filters {
   setOwnerDirectory: (list: OwnerSummary[]) => void;
   openPanel: (id: PanelId) => void;
   setHighStatus: (status: GroupStatus) => void;
+  toggleDataTable: (which: "history" | "owners") => void;
   reset: () => void;
 }
 
@@ -80,6 +83,7 @@ const initial = (): Filters &
     | "ownerDirectory"
     | "panelRequest"
     | "highStatus"
+    | "dataTablesOpen"
   > => ({
   types: [...OBJECT_TYPES],
   owners: [],
@@ -95,6 +99,7 @@ const initial = (): Filters &
   ownerDirectory: [],
   panelRequest: null,
   highStatus: "idle",
+  dataTablesOpen: { history: false, owners: false },
 });
 
 export const useExplorer = create<ExplorerState>((set, get) => ({
@@ -163,6 +168,7 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
       saveVisibility(browserStorage(), panels);
       return { panels, panelRequest: { id, n: (s.panelRequest?.n ?? 0) + 1 } };
     }),
+  toggleDataTable: (which) => set((s) => ({ dataTablesOpen: { ...s.dataTablesOpen, [which]: !s.dataTablesOpen[which] } })),
   reset: () => set(initial()),
 }));
 

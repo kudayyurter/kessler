@@ -966,3 +966,32 @@ test("a long owner name doesn't overflow the page or make the summary pill more 
   const box = (await summary.boundingBox())!;
   expect(box.height).toBeLessThanOrEqual(64);
 });
+
+test("each chart's data is available as a table", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const history = page.locator('[data-panel="history"]');
+  const view = history.getByRole("button", { name: "View data" });
+  await expect(view).toHaveAttribute("aria-expanded", "false");
+  await view.click();
+  await expect(history.getByRole("button", { name: "Hide data" })).toHaveAttribute("aria-expanded", "true");
+  const ht = history.getByRole("table", { name: "Objects in orbit at the end of each year" });
+  await expect(ht.getByRole("columnheader", { name: "Year" })).toBeVisible();
+  await expect(ht.getByRole("columnheader", { name: "Total" })).toBeVisible();
+  expect(await ht.getByRole("row").count()).toBeGreaterThan(2);
+  const owners = page.locator('[data-panel="owners"]');
+  await owners.getByRole("button", { name: "View data" }).click();
+  const ot = owners.getByRole("table", { name: "Objects in orbit by owner and type" });
+  await expect(ot).toContainText("United States");
+  await expect(ot.getByRole("columnheader", { name: "Owner" })).toBeVisible();
+});
+
+test("a narrow History chart shows current values in its legend", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "History" }).click();
+  const ts = JSON.parse(fx("api/timeseries.json").toString());
+  const pay = ts.series.find((s: { key: string }) => s.key === "PAY").values.at(-1) as number;
+  await expect(page.getByTestId("history-legend")).toContainText(pay.toLocaleString("en-US"));
+});
