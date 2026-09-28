@@ -48,6 +48,9 @@ interface ExplorerState extends Filters {
   offFit: boolean;
   // Bumped by FitButton to ask GlobeScene to fly the camera back to the fitted framing.
   fitRequest: number;
+  // A short status message for the sr-only Announcer (e.g. "Filters reset"); `n` counts how many
+  // times announce() has fired, for tests that need to tell two identical announcements apart.
+  announcement: { text: string; n: number } | null;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -73,6 +76,7 @@ interface ExplorerState extends Filters {
   toggleDataTable: (which: "history" | "owners") => void;
   setOffFit: (offFit: boolean) => void;
   requestFit: () => void;
+  announce: (text: string) => void;
   reset: () => void;
 }
 
@@ -93,6 +97,7 @@ const initial = (): Filters &
     | "dataTablesOpen"
     | "offFit"
     | "fitRequest"
+    | "announcement"
   > => ({
   types: [...OBJECT_TYPES],
   owners: [],
@@ -111,6 +116,7 @@ const initial = (): Filters &
   dataTablesOpen: { history: false, owners: false },
   offFit: false,
   fitRequest: 0,
+  announcement: null,
 });
 
 export const useExplorer = create<ExplorerState>((set, get) => ({
@@ -182,6 +188,7 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
   toggleDataTable: (which) => set((s) => ({ dataTablesOpen: { ...s.dataTablesOpen, [which]: !s.dataTablesOpen[which] } })),
   setOffFit: (offFit) => set({ offFit }),
   requestFit: () => set((s) => ({ fitRequest: s.fitRequest + 1 })),
+  announce: (text) => set((s) => ({ announcement: { text, n: (s.announcement?.n ?? 0) + 1 } })),
   reset: () => set(initial()),
 }));
 

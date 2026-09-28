@@ -233,3 +233,13 @@ describe("fit globe", () => {
     expect(useExplorer.getState().fitRequest).toBe(2);
   });
 });
+
+describe("announcements", () => {
+  it("replaces the text and counts announcements", () => {
+    useExplorer.getState().reset();
+    expect(useExplorer.getState().announcement).toBeNull();
+    useExplorer.getState().announce("Filters reset");
+    useExplorer.getState().announce("Filters reset");
+    expect(useExplorer.getState().announcement).toEqual({ text: "Filters reset", n: 2 });
+  });
+});

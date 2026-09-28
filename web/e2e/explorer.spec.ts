@@ -1130,3 +1130,54 @@ test("pressing Fit while it has focus moves focus to the globe, not the page bod
   expect(active.label).toBe("Live globe of tracked objects");
 });
 
+test("Reset announces itself and leaves focus on the first filter chip", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(page.getByTestId("announcer")).toHaveText("Filters reset");
+  await expect.poll(() => page.evaluate(() => document.activeElement?.hasAttribute("data-filters-first") ?? false)).toBe(true);
+});
+
+test("Reset with Filters hidden focuses the dock's Filters button", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/");
+  const dockFilters = page.getByTestId("panel-dock").getByRole("button", { name: "Filters" });
+  await dockFilters.click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  await page.getByRole("button", { name: "Hide Filters" }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: "Reset filters" }).click();
+  await expect(dockFilters).toBeFocused();
+});
+
+test("no horizontal overflow at 320 px, even with the longest status text", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  const pill = page.getByTestId("live-badge");
+  await expect(pill).toContainText("not available");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(await pill.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
+test("on short landscape screens the filter summary is compact", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await mockApi(page);
+  await page.goto("/");
+  await page.getByTestId("mobile-sheet").getByRole("tab", { name: "Filters" }).click();
+  await page.getByRole("button", { name: "Higher orbits" }).click();
+  const summary = page.getByTestId("filter-summary");
+  // The summary group's innerText also includes the sr-only "Opens the Filters panel" description,
+  // so this asserts on the open button's own text and the pill's single-line height instead of the
+  // group's full innerText (see task-5's controller amendment).
+  const openButton = summary.getByRole("button", { name: "Showing All orbits · All owners · all types" });
+  await expect(openButton).toBeVisible();
+  expect((await openButton.innerText()).trim()).toBe("Filtered");
+  await expect(summary.getByRole("button", { name: "Reset filters" })).toBeVisible();
+  const box = (await summary.boundingBox())!;
+  expect(box.height).toBeLessThan(48);
+});
+
