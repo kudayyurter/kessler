@@ -447,7 +447,7 @@ test("a panel's own remount (crossing the sheet/desktop breakpoint) does not rep
   await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
   await page.getByRole("button", { name: "Higher orbits" }).click();
   // The summary pill's own button (openPanel) is a legitimate scroll request.
-  await page.getByTestId("filter-summary").getByRole("button", { name: /^Showing/ }).click();
+  await page.getByTestId("filter-summary").getByRole("button", { name: /^Filtered: showing/ }).click();
   const countFilters = () => page.evaluate(() => (window as unknown as { __scrollCalls: string[] }).__scrollCalls.filter((id) => id === "filters").length);
   const callsAfterOpen = await countFilters();
   expect(callsAfterOpen).toBeGreaterThan(0);

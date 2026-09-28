@@ -20,6 +20,10 @@ export function FilterSummary() {
   if (isDefaultFilters(f)) return null;
   const owner = ownerText(f.owners, directory);
   const label = `Showing ${filterScope(f, directory)}`;
+  // The accessible name must contain the visible text in both layouts — the full label matches
+  // "Showing …" case-insensitively; the compact ("short:") layout shows only the word "Filtered"
+  // (WCAG 2.5.3 Label in Name). `title` keeps the full "Showing …" text for a mouse hover tooltip.
+  const accessibleName = `Filtered: showing ${filterScope(f, directory)}`;
   return (
     <div
       role="group"
@@ -37,7 +41,7 @@ export function FilterSummary() {
       <button
         type="button"
         onClick={() => openPanel("filters")}
-        aria-label={label}
+        aria-label={accessibleName}
         aria-describedby={descId}
         title={label}
         className="line-clamp-2 min-w-0 flex-1 text-center hover:underline"
