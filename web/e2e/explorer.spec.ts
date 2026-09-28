@@ -1037,7 +1037,7 @@ test("the dock lists Search and Filters first and tags Ask AI as soon", async ({
 });
 
 test("Tab out of the open owner list keeps focus on a page control", async ({ page }) => {
-  await mockApi(page);
+  await mockApi(page, { "/meta": { status: 200, body: metaWithManyOwners() } });
   await page.goto("/");
   await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
   await page.getByRole("combobox", { name: "Owner" }).click();
