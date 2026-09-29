@@ -12,6 +12,16 @@ export interface WorkerLike {
   terminate(): void;
 }
 
+type Latest = { day: string; generation: string | null };
+
+/** The days whose cached copies a new index makes stale: the latest day when a new generation
+ * rewrote it, and also the previous latest day when the day rolled over (runs later that day
+ * replaced the copy this page fetched, e.g. while the tab slept through them). */
+export function staleDays(previous: Latest | null, next: Latest): string[] {
+  if (!previous || (previous.day === next.day && previous.generation === next.generation)) return [];
+  return previous.day === next.day ? [next.day] : [next.day, previous.day];
+}
+
 type WithoutId<T> = T extends unknown ? Omit<T, "id"> : never;
 export type CrowdingClient = ReturnType<typeof createCrowdingClient>;
 

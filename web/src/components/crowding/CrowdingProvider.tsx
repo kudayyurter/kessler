@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { api, type CrowdingIndex } from "@/lib/api";
 import type { CrowdingChange, Mover } from "@/lib/crowding/change";
-import { createCrowdingClient, type CrowdingClient } from "@/lib/crowding/client";
+import { createCrowdingClient, staleDays, type CrowdingClient } from "@/lib/crowding/client";
 import type { CrowdingFilter, CrowdingMap } from "@/lib/crowding/grid";
 import { gunzip } from "@/lib/snapshot";
 import { useExplorer } from "@/lib/store";
@@ -65,10 +65,10 @@ export function CrowdingProvider({ children }: { children: React.ReactNode }) {
           setStatus("empty");
           return;
         }
-        const previous = latest.current;
+        const stale = staleDays(latest.current, next.latest);
         latest.current = next.latest;
-        if (previous && (previous.day !== next.latest.day || previous.generation !== next.latest.generation)) {
-          clientRef.current?.forget(next.latest.day);
+        if (stale.length > 0) {
+          for (const day of stale) clientRef.current?.forget(day);
           setVersion((v) => v + 1);
         }
         setIndex(next);

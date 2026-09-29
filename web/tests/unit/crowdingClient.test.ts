@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
-import { createCrowdingClient, type WorkerLike } from "@/lib/crowding/client";
+import { createCrowdingClient, staleDays, type WorkerLike } from "@/lib/crowding/client";
 import { cellIndex } from "@/lib/crowding/grid";
 import { createHandler, type CrowdingIn, type CrowdingOut } from "@/workers/crowding.worker";
 import { LEO } from "./crowdingDays";
@@ -94,5 +94,22 @@ describe("crowding client", () => {
     d.dispose();
     await expect(pending).rejects.toThrow("disposed");
     expect(never.terminate).toHaveBeenCalled();
+  });
+});
+
+describe("staleDays", () => {
+  const at = (day: string, generation: string | null) => ({ day, generation });
+
+  it("forgets nothing on the first index, or when the latest file is unchanged", () => {
+    expect(staleDays(null, at(DAY2, "g1"))).toEqual([]);
+    expect(staleDays(at(DAY2, "g1"), at(DAY2, "g1"))).toEqual([]);
+  });
+
+  it("forgets the latest day when a new generation rewrote it", () => {
+    expect(staleDays(at(DAY2, "g1"), at(DAY2, "g2"))).toEqual([DAY2]);
+  });
+
+  it("also forgets the previous latest day when the day rolled over, since later runs that day replaced it", () => {
+    expect(staleDays(at(DAY1, "g1"), at(DAY2, "g2"))).toEqual([DAY2, DAY1]);
   });
 });
