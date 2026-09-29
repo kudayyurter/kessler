@@ -215,9 +215,9 @@ describe("selection and filter actions", () => {
 describe("data tables", () => {
   it("start closed and toggle per chart", () => {
     useExplorer.getState().reset();
-    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false });
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false, crowding: false });
     useExplorer.getState().toggleDataTable("owners");
-    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true });
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true, crowding: false });
   });
 });
 

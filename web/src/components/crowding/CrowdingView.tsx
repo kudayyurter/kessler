@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { DataDisclosure } from "@/components/charts/ChartData";
 import { CellCard } from "@/components/crowding/CellCard";
 import { useCrowding, useCrowdingChange, useCrowdingMap } from "@/components/crowding/CrowdingProvider";
 import { retryButton } from "@/components/crowding/CrowdingPanel";
+import { CrowdingTables } from "@/components/crowding/CrowdingTables";
 import { DensityStrip } from "@/components/crowding/DensityStrip";
 import { GridCanvas } from "@/components/crowding/GridCanvas";
+import { MethodNote } from "@/components/crowding/MethodNote";
 import { Timeline } from "@/components/crowding/Timeline";
 import { Unavailable } from "@/components/ui/Unavailable";
 import { GAIN_STOPS, HIGH_STRIP_ROWS, LEO_AND_FLOOR_ROWS, LOSS_STOPS, NOW_STOPS } from "@/lib/crowding/draw";
@@ -224,6 +227,12 @@ function CrowdingDialog() {
           onPlay={play}
           loading={loading}
         />
+      )}
+      {index && <MethodNote index={index} skipped={map.data?.skipped ?? 0} />}
+      {values && (
+        <DataDisclosure which="crowding" label="Crowding data">
+          <CrowdingTables mode={mode} map={map.data} change={change.data} />
+        </DataDisclosure>
       )}
     </div>
   );

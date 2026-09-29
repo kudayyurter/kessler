@@ -43,7 +43,7 @@ interface ExplorerState extends Filters {
   // came back missing) gets a reason instead of sitting "pending" forever. See noPositionReason.
   highStatus: GroupStatus;
   // Whether each chart's "View data" disclosure (see ChartData.tsx) is open, per chart.
-  dataTablesOpen: { history: boolean; owners: boolean };
+  dataTablesOpen: { history: boolean; owners: boolean; crowding: boolean };
   // Whether the camera has moved away from the whole-Earth fitted framing (see lib/camera.ts's
   // isOffFit), published by GlobeScene's throttled per-frame check — drives FitButton's visibility.
   offFit: boolean;
@@ -82,7 +82,7 @@ interface ExplorerState extends Filters {
   setOwnerDirectory: (list: OwnerSummary[]) => void;
   openPanel: (id: PanelId) => void;
   setHighStatus: (status: GroupStatus) => void;
-  toggleDataTable: (which: "history" | "owners") => void;
+  toggleDataTable: (which: "history" | "owners" | "crowding") => void;
   setOffFit: (offFit: boolean) => void;
   requestFit: () => void;
   announce: (text: string) => void;
@@ -124,7 +124,7 @@ const initial = (): Filters &
   ownerDirectory: [],
   panelRequest: null,
   highStatus: "idle",
-  dataTablesOpen: { history: false, owners: false },
+  dataTablesOpen: { history: false, owners: false, crowding: false },
   offFit: false,
   fitRequest: 0,
   announcement: null,

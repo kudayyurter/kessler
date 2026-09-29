@@ -8,7 +8,7 @@ import { TYPE_LABELS, type BreakdownResponse, type OwnerSummary, type Timeseries
 
 /** "View data" / "Hide data" under a chart: the same numbers as a real table for keyboard and
  * screen-reader users. The scroll area is focusable so a keyboard can scroll it. */
-export function DataDisclosure({ which, label, children }: { which: "history" | "owners"; label: string; children: React.ReactNode }) {
+export function DataDisclosure({ which, label, children }: { which: "history" | "owners" | "crowding"; label: string; children: React.ReactNode }) {
   const open = useExplorer((s) => s.dataTablesOpen[which]);
   const toggle = useExplorer((s) => s.toggleDataTable);
   const regionId = useId();

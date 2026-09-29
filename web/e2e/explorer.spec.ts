@@ -1404,4 +1404,34 @@ test.describe("crowding", () => {
     await expect(day).toHaveAttribute("aria-valuetext", "2026-09-22");
     await expect(dialog.getByText("09-22 18:41")).toBeVisible();
   });
+
+  test("the expanded view's data tables and method note", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Expand crowding view" }).click();
+    const dialog = page.getByRole("dialog", { name: "Crowding by altitude × inclination" });
+    await dialog.getByRole("button", { name: "View data" }).click();
+    const region = dialog.getByRole("region", { name: "Crowding data" });
+    await expect(region.getByRole("table").first().getByRole("row").nth(1)).toContainText("450–475 km · 52.5–54.5°");
+    await dialog.getByText("Method").click();
+    await expect(dialog.getByText(/History since 22 Sept? 2026/)).toBeVisible();
+    await expect(dialog.getByText("1 earlier day was rebuilt from the orbit-history archive.")).toBeVisible();
+  });
+
+  test("on a phone, Crowding is a sheet tab and the expanded view fills the screen", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page);
+    await page.goto("/");
+    const sheet = page.getByTestId("mobile-sheet");
+    await sheet.getByRole("tab", { name: "Crowding" }).click();
+    await sheet.getByRole("button", { name: "Expand crowding view" }).click();
+    const dialog = page.getByRole("dialog", { name: "Crowding by altitude × inclination" });
+    const box = (await dialog.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(389);
+    expect(box.height).toBeGreaterThanOrEqual(843);
+    const map = dialog.getByRole("group", { name: "Crowding map" });
+    expect((await map.boundingBox())!.width).toBeLessThanOrEqual(390 - 24);
+    await dialog.getByRole("button", { name: "Close crowding view" }).click();
+    await expect(dialog).toHaveCount(0);
+  });
 });
