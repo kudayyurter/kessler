@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import httpx
 
 from app.config import Settings, load_settings, make_store
+from app.crowding.publish import run_publish_crowding
 from app.db import connect
 from app.ingest.gp import run_ingest_gp
 from app.ingest.satcat import run_ingest_satcat
@@ -13,7 +14,7 @@ from app.ingest.snapshot import SnapshotStore, run_publish_globe
 from app.ingest.sources import USER_AGENT, CelesTrakClient, SpaceTrackClient
 from app.stats.rebuild import run_rebuild_stats
 
-JOBS = ("ingest-satcat", "ingest-gp", "rebuild-stats", "publish-globe", "all")
+JOBS = ("ingest-satcat", "ingest-gp", "rebuild-stats", "publish-globe", "publish-crowding", "all")
 
 
 def run_job(
@@ -52,6 +53,8 @@ def run_job(
             result["archived_gp"] = gp.archived
         if name == "publish-globe":
             result["publish_globe"] = run_publish_globe(conn, store, settings.database_url)
+        if name in ("ingest-gp", "publish-globe", "publish-crowding", "all"):
+            result["publish_crowding"] = run_publish_crowding(conn, store, settings.database_url)
         return result
 
 
