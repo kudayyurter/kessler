@@ -97,3 +97,9 @@ def test_ingest_gp_stays_ok_when_the_crowding_step_fails(conn, migrated, tmp_pat
     assert runs["ingest_gp"] == "ok"
     assert runs["publish_crowding"] == "failed"
     assert read_pointer(store) is not None
+
+
+def test_backfill_crowding_job_runs(conn, migrated, tmp_path):
+    result = run_job("backfill-crowding", Settings(database_url=migrated),
+                     store=LocalSnapshotStore(tmp_path))
+    assert result == {"backfill_crowding": 0}
