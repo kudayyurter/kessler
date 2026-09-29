@@ -8,6 +8,7 @@ import { PANELS, type PanelId } from "@/lib/panels";
 import { regimesFor, useExplorer } from "@/lib/store";
 import { useSheetLayout } from "@/lib/useIsMobile";
 import type { Meta, TimeseriesResponse } from "@/lib/types";
+import { CrowdingProvider } from "@/components/crowding/CrowdingProvider";
 import { MobileSheet } from "@/components/layout/MobileSheet";
 import { Panel } from "@/components/layout/Panel";
 import { PanelColumn } from "@/components/layout/PanelColumn";
@@ -119,24 +120,26 @@ export default function Explorer() {
   );
   return (
     <main className="h-dvh overflow-hidden">
-      <Announcer />
-      <GlobeSection />
-      {sheet !== false && <MobileSheet ctx={ctx} showBody={sheet === true} />}
-      {sheet !== true && (
-        <div className="sheet:hidden">
-          <div className="pointer-events-none fixed inset-x-0 top-3 z-20 flex justify-center px-[calc(theme(spacing.4)+var(--col-l))]">
-            <PanelDock />
+      <CrowdingProvider>
+        <Announcer />
+        <GlobeSection />
+        {sheet !== false && <MobileSheet ctx={ctx} showBody={sheet === true} />}
+        {sheet !== true && (
+          <div className="sheet:hidden">
+            <div className="pointer-events-none fixed inset-x-0 top-3 z-20 flex justify-center px-[calc(theme(spacing.4)+var(--col-l))]">
+              <PanelDock />
+            </div>
+            <PanelColumn side="left" className="pointer-events-none fixed bottom-4 left-4 top-14 z-10 flex w-[var(--col-l)] flex-col justify-between gap-3 overflow-y-auto">
+              <div className="flex flex-col gap-3">{panel("overview")}{panel("filters")}</div>
+              {panel("history")}
+            </PanelColumn>
+            <PanelColumn side="right" className="pointer-events-none fixed bottom-4 right-4 top-14 z-10 flex w-[var(--col-r)] flex-col justify-between gap-3 overflow-y-auto">
+              <div className="flex flex-col gap-3">{panel("search")}{panel("chat")}</div>
+              <div className="flex flex-col gap-3">{panel("crowding")}{panel("owners")}</div>
+            </PanelColumn>
           </div>
-          <PanelColumn side="left" className="pointer-events-none fixed bottom-4 left-4 top-14 z-10 flex w-[var(--col-l)] flex-col justify-between gap-3 overflow-y-auto">
-            <div className="flex flex-col gap-3">{panel("overview")}{panel("filters")}</div>
-            {panel("history")}
-          </PanelColumn>
-          <PanelColumn side="right" className="pointer-events-none fixed bottom-4 right-4 top-14 z-10 flex w-[var(--col-r)] flex-col justify-between gap-3 overflow-y-auto">
-            <div className="flex flex-col gap-3">{panel("search")}{panel("chat")}</div>
-            {panel("owners")}
-          </PanelColumn>
-        </div>
-      )}
+        )}
+      </CrowdingProvider>
     </main>
   );
 }

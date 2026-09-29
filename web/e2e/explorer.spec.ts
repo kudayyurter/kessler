@@ -62,6 +62,9 @@ function withPublishTime(gz: Buffer, oldIso: string, newIso: string): Buffer {
   return zlib.gzipSync(patched);
 }
 
+/** The globe's WebGL canvas (the crowding maps are canvases too). */
+const globeCanvas = (page: Page) => page.locator('section[aria-label="Live globe of tracked objects"] canvas');
+
 async function mockApi(page: Page, overrides: Record<string, { status: number; body?: Buffer | string }> = {}) {
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
@@ -82,6 +85,17 @@ async function mockApi(page: Page, overrides: Record<string, { status: number; b
       return url.searchParams.get("group") === "LEO"
         ? route.fulfill({ status: 200, body: fx("api/names-leo.json"), contentType: "application/json" })
         : route.fulfill({ status: 404, body: JSON.stringify({ error: { code: "not_found", message: "none" } }), contentType: "application/json" });
+    }
+    if (path === "/crowding/index") {
+      return route.fulfill({ status: 200, body: fx("crowding/index.json"), contentType: "application/json" });
+    }
+    const crowdingDay = path.match(/^\/crowding\/day\/([0-9]{4}-[0-9]{2}-[0-9]{2})$/);
+    if (crowdingDay) {
+      try {
+        return route.fulfill({ status: 200, body: fx(`crowding/day-${crowdingDay[1]}.bin.gz`), contentType: "application/octet-stream" });
+      } catch {
+        return route.fulfill({ status: 404, body: JSON.stringify({ error: { code: "not_found", message: "none" } }), contentType: "application/json" });
+      }
     }
     const file = map[path];
     return file
@@ -113,7 +127,7 @@ test("explorer renders tiles, charts, globe and attribution", async ({ page }) =
   await page.goto("/");
   await expect(page.getByTestId("tile-PAY")).toContainText("17,750", { timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "Payloads overtook debris in 2024" })).toBeVisible();
-  await expect(page.locator("canvas")).toHaveCount(1);
+  await expect(globeCanvas(page)).toHaveCount(1);
   await page.getByRole("img", { name: "Objects in orbit per year by type" }).scrollIntoViewIfNeeded();
   await expect(page.locator("path[data-series]")).toHaveCount(3);
   await expect(page.getByText("Data: USSPACECOM via Space-Track.org; CelesTrak.")).toBeVisible();
@@ -131,7 +145,7 @@ test("search opens the object card", async ({ page }) => {
 test("zooming in on a searched object shows name labels near the centre; clicking one opens its card", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
-  const canvas = page.locator("canvas");
+  const canvas = globeCanvas(page);
   await expect(canvas).toBeVisible();
   // Fly to ISS via search rather than wheel-zooming at the canvas centre: the snapshot fixture
   // has only 2 objects, so a blind zoom can leave both off-screen depending on where the globe
@@ -178,7 +192,7 @@ test("selecting a higher-orbit search result turns on Higher orbits and flies to
     }),
   );
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await page.getByLabel("Find an object").fill("test geo");
   await page.getByRole("button", { name: /TEST GEO/ }).click();
   await expect(page.getByTestId("filter-summary")).toContainText("All orbits");
@@ -218,7 +232,7 @@ test("an object missing from its loaded group says there is no current orbit dat
     }),
   );
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await page.getByLabel("Find an object").fill("lost");
   await page.getByRole("button", { name: /LOST SAT/ }).click();
   await expect(page.getByTestId("no-position")).toHaveText("No current orbit data for this object.", { timeout: 15_000 });
@@ -283,7 +297,7 @@ test("falls back to the un-versioned snapshot when the pointer fetch fails", asy
   });
   await mockApi(page, { "/globe/current": { status: 500 } });
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await expect.poll(() => snapshotUrls.length).toBeGreaterThan(0);
   expect(new URL(snapshotUrls[0]).searchParams.get("gen")).toBeNull();
 });
@@ -293,7 +307,7 @@ test("phone: bottom sheet with tabs, no horizontal overflow", async ({ page }) =
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   const sheet = page.getByTestId("mobile-sheet");
   await expect(sheet).toBeVisible();
   await expect(page.getByTestId("panel-dock")).toHaveCount(0);
@@ -359,7 +373,7 @@ test("a broken globe render falls back without breaking the rest of the page", a
   await mockApi(page);
   await page.goto("/");
   await expect(page.getByText(/This device can.t show the 3D globe \(WebGL is unavailable\)/)).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator("canvas")).toHaveCount(0);
+  await expect(globeCanvas(page)).toHaveCount(0);
   // The rest of the page must still work: tiles and charts render, nothing else crashed.
   await expect(page.getByTestId("tile-PAY")).toContainText("17,750");
   await page.getByRole("img", { name: "Objects in orbit per year by type" }).scrollIntoViewIfNeeded();
@@ -410,8 +424,8 @@ test("globe fills the viewport with no card frame", async ({ page }) => {
   // R3F's <Canvas> starts at the browser's default 300x150 and syncs to its container's real
   // size via a ResizeObserver a beat after mount (dynamic import + WebGL probe + hydration), so
   // poll instead of reading boundingBox() once right after goto.
-  await expect.poll(async () => (await page.locator("canvas").boundingBox())?.width).toBeGreaterThanOrEqual(1440 - 1);
-  const box = await page.locator("canvas").boundingBox();
+  await expect.poll(async () => (await globeCanvas(page).boundingBox())?.width).toBeGreaterThanOrEqual(1440 - 1);
+  const box = await globeCanvas(page).boundingBox();
   expect(box?.height).toBeGreaterThanOrEqual(900 - 1);
   await expect(page.locator("section.card")).toHaveCount(0);
 });
@@ -465,11 +479,11 @@ test("a panel's own remount (crossing the sheet/desktop breakpoint) does not rep
 test("hiding all panels leaves the dock to restore them", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
-  for (const name of ["Overview", "Search", "History", "Owners"]) {
+  for (const name of ["Overview", "Search", "History", "Owners", "Crowding"]) {
     await page.getByRole("button", { name: `Hide ${name}` }).click();
   }
   await expect(page.locator("[data-panel]")).toHaveCount(0);
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await page.getByTestId("panel-dock").getByRole("button", { name: "Overview" }).click();
   await expect(page.getByTestId("tile-PAY")).toBeVisible();
 });
@@ -496,7 +510,7 @@ for (const [w, h] of [[640, 900], [768, 1024], [844, 390], [1024, 768], [1280, 7
     await page.setViewportSize({ width: w, height: h });
     await mockApi(page);
     await page.goto("/");
-    await expect(page.locator("canvas")).toBeVisible();
+    await expect(globeCanvas(page)).toBeVisible();
     const sheetLayout = w < 1024 || h < 560;
     await expect(sheetLayout ? page.getByLabel("Find an object") : page.locator("path[data-series]").first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("mobile-sheet")).toHaveCount(sheetLayout ? 1 : 0);
@@ -825,7 +839,7 @@ test("selecting an owner then typing right away starts a fresh search, not the s
 test("the filter summary appears when filters change and Reset restores the defaults", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await expect(page.getByTestId("filter-summary")).toHaveCount(0);
   await page.getByTestId("panel-dock").getByRole("button", { name: "Filters" }).click();
   await page.getByRole("button", { name: "Higher orbits" }).click();
@@ -1053,7 +1067,7 @@ test("collapsed sheet: every tab's aria-controls still resolves to an element in
   await collapse.click();
   await expect(sheet.getByRole("button", { name: "Expand panel" })).toHaveAttribute("aria-expanded", "false");
   const ids = await sheet.getByRole("tab").evaluateAll((els) => els.map((e) => e.getAttribute("aria-controls")));
-  expect(ids.length).toBe(6);
+  expect(ids.length).toBe(7);
   const allPresent = await page.evaluate(
     (idList) => idList.every((id) => id !== null && document.getElementById(id) !== null),
     ids,
@@ -1065,7 +1079,7 @@ test("the dock lists Search and Filters first and tags Ask AI as soon", async ({
   await mockApi(page);
   await page.goto("/");
   const dock = page.getByTestId("panel-dock");
-  await expect(dock.getByRole("button")).toHaveText(["Search", "Filters", "Overview", "History", "Owners", /^Ask AI\s*soon$/]);
+  await expect(dock.getByRole("button")).toHaveText(["Search", "Filters", "Overview", "History", "Owners", "Crowding", /^Ask AI\s*soon$/]);
   await expect(dock.getByRole("button", { name: "Ask AI, soon" })).toBeVisible();
 });
 
@@ -1082,7 +1096,7 @@ test("Tab out of the open owner list keeps focus on a page control", async ({ pa
 test("the Fit pill appears after a fly-to and brings back the whole-Earth view", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   const fit = page.getByRole("button", { name: "Fit globe" });
   await expect(fit).toHaveCount(0);
   await page.getByLabel("Find an object").fill("ISS");
@@ -1096,7 +1110,7 @@ test("phone: a search fly-to survives an auto-refit triggered by the filter summ
   await page.setViewportSize({ width: 390, height: 844 });
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   const sheet = page.getByTestId("mobile-sheet");
   const section = page.locator("section[aria-label='Live globe of tracked objects']");
   // Turn off Payloads (the filter-summary pill mounts onto the top bar, growing it by a row) and
@@ -1127,7 +1141,7 @@ test("resizing from desktop to phone width re-fits the Earth", async ({ page }) 
   await page.setViewportSize({ width: 1280, height: 720 });
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await page.waitForTimeout(500);
   await page.setViewportSize({ width: 390, height: 844 });
   const section = page.locator("section[aria-label='Live globe of tracked objects']");
@@ -1158,7 +1172,7 @@ test("a small phone (320x568) fits without leaving the camera pinned at OrbitCon
   await page.setViewportSize({ width: 320, height: 568 });
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   const section = page.locator("section[aria-label='Live globe of tracked objects']");
   const topBar = page.getByTestId("globe-topbar");
   await expect
@@ -1178,7 +1192,7 @@ test("a small phone (320x568) fits without leaving the camera pinned at OrbitCon
 test("pressing Fit while it has focus moves focus to the globe, not the page body", async ({ page }) => {
   await mockApi(page);
   await page.goto("/");
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(globeCanvas(page)).toBeVisible();
   await page.getByLabel("Find an object").fill("ISS");
   await page.getByRole("button", { name: /ISS \(ZARYA\)/ }).click();
   const fit = page.getByRole("button", { name: "Fit globe" });
@@ -1279,3 +1293,66 @@ test("on short landscape screens the filter summary is compact", async ({ page }
   expect(box.height).toBeLessThan(48);
 });
 
+test.describe("crowding", () => {
+  /** The centre of a cell on a crowding canvas, from the layout numbers the canvas exposes. */
+  async function cellPoint(map: import("@playwright/test").Locator, row: number, col: number) {
+    await map.scrollIntoViewIfNeeded();
+    const box = (await map.boundingBox())!;
+    const n = async (a: string) => Number(await map.getAttribute(a));
+    const [cw, ch, pad, first, count] = [await n("data-cell-w"), await n("data-cell-h"), await n("data-pad-left"), await n("data-first-row"), await n("data-row-count")];
+    return { x: box.x + pad + (col + 0.5) * cw, y: box.y + (count - 1 - (row - first) + 0.5) * ch };
+  }
+
+  test("the panel maps today's crowding and explains a cell on hover", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    const panel = page.getByRole("region", { name: "Crowding" });
+    await expect(panel.getByText("Busiest shell 450–475 km · 0.61 per 10⁹ km³")).toBeVisible();
+    const p = await cellPoint(panel.getByRole("group", { name: "Crowding map" }), 11, 27);
+    await page.mouse.move(p.x, p.y);
+    await expect(panel.getByText("450–475 km · 52.5–54.5°")).toBeVisible();
+    await expect(panel.getByText("≈ 9 objects at any moment")).toBeVisible();
+    await expect(panel.getByText("8 payloads · 1 debris")).toBeVisible();
+  });
+
+  test("clicking a cell pins it as a filter; Reset clears it", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    const map = page.getByRole("region", { name: "Crowding" }).getByRole("group", { name: "Crowding map" });
+    const p = await cellPoint(map, 11, 27);
+    await page.mouse.click(p.x, p.y);
+    await expect(page.getByTestId("filter-summary")).toContainText("Shell 450–475 km · 52.5–54.5°");
+    await page.getByRole("button", { name: "Reset filters" }).click();
+    await expect(page.getByTestId("filter-summary")).toHaveCount(0);
+  });
+
+  test("the map works from the keyboard and announces cells", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    const map = page.getByRole("region", { name: "Crowding" }).getByRole("group", { name: "Crowding map" });
+    await expect(page.getByRole("region", { name: "Crowding" }).getByText(/Busiest shell/)).toBeVisible();
+    await map.focus();
+    await expect(page.getByTestId("announcer")).toContainText("450–475 km · 52.5–54.5°. ≈ 9 objects at any moment");
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByTestId("announcer")).toContainText("425–450 km · 52.5–54.5°");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("filter-summary")).toContainText("Shell 450–475 km · 52.5–54.5°");
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("filter-summary")).toHaveCount(0);
+  });
+
+  test("says when there is no crowding data yet", async ({ page }) => {
+    await mockApi(page, { "/crowding/index": { status: 404 } });
+    await page.goto("/");
+    await expect(page.getByRole("region", { name: "Crowding" }).getByText("No crowding data yet.")).toBeVisible();
+  });
+
+  test("shows an error with Retry when crowding can't load", async ({ page }) => {
+    await mockApi(page, { "/crowding/index": { status: 500 } });
+    await page.goto("/");
+    const panel = page.getByRole("region", { name: "Crowding" });
+    await expect(panel.getByText("Data unavailable: crowding.")).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Retry" })).toBeVisible();
+  });
+});

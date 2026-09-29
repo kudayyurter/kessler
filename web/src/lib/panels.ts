@@ -1,4 +1,4 @@
-export type PanelId = "overview" | "search" | "history" | "owners" | "filters" | "chat";
+export type PanelId = "overview" | "search" | "history" | "owners" | "crowding" | "filters" | "chat";
 
 export const PANELS: readonly { id: PanelId; title: string; soon?: boolean }[] = [
   { id: "search", title: "Search" },
@@ -6,6 +6,7 @@ export const PANELS: readonly { id: PanelId; title: string; soon?: boolean }[] =
   { id: "overview", title: "Overview" },
   { id: "history", title: "History" },
   { id: "owners", title: "Owners" },
+  { id: "crowding", title: "Crowding" },
   { id: "chat", title: "Ask AI", soon: true },
 ];
 
@@ -16,7 +17,7 @@ export function panelLabel(p: { title: string; soon?: boolean }): string | undef
 }
 
 export const DEFAULT_VISIBILITY: Record<PanelId, boolean> = {
-  overview: true, search: true, history: true, owners: true, filters: false, chat: false,
+  overview: true, search: true, history: true, owners: true, crowding: true, filters: false, chat: false,
 };
 
 export const STORAGE_KEY = "kessler.panels.v1";
