@@ -174,3 +174,19 @@ describe("api", () => {
     expect(init?.signal).toBeInstanceOf(AbortSignal);
   });
 });
+
+describe("crowding API", () => {
+  it("returns null for a missing index or day", async () => {
+    stubFetch(Response.json({ error: { code: "not_found", message: "none" } }, { status: 404 }));
+    expect(await api.crowdingIndex()).toBeNull();
+    expect(await api.crowdingDay("2026-09-20")).toBeNull();
+  });
+
+  it("returns the index and a day's bytes, passing gen through", async () => {
+    stubFetch(Response.json({ latest: { day: "2026-09-23", generation: null } }));
+    expect((await api.crowdingIndex())?.latest?.day).toBe("2026-09-23");
+    const fn = stubFetch(new Response(new Uint8Array([1, 2, 3])));
+    expect(Array.from((await api.crowdingDay("2026-09-23", "20260923T120000Z-r1"))!)).toEqual([1, 2, 3]);
+    expect((fn.mock.calls[0] as unknown[])[0]).toBe("/api/crowding/day/2026-09-23?gen=20260923T120000Z-r1");
+  });
+});
