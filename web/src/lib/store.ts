@@ -1,11 +1,12 @@
 import { create } from "zustand";
+import { inShell, type Shell } from "@/lib/crowding/shell";
 import type { Orbits } from "@/lib/filterSummary";
 import type { GroupStatus } from "@/lib/globeData";
 import { browserStorage, DEFAULT_VISIBILITY, loadVisibility, saveVisibility, type PanelId } from "@/lib/panels";
 import { filtersToShow, type Findable, type GlobePresence } from "@/lib/selection";
 import { OBJECT_TYPES, type ObjectType, type OwnerSummary, type Regime } from "@/lib/types";
 
-type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits };
+type Filters = { types: ObjectType[]; owners: string[]; orbits: Orbits; shell: Shell | null };
 
 interface ExplorerState extends Filters {
   selectedId: number | null;
@@ -51,6 +52,14 @@ interface ExplorerState extends Filters {
   // A short status message for the sr-only Announcer (e.g. "Filters reset"); `n` counts how many
   // times announce() has fired, for tests that need to tell two identical announcements apart.
   announcement: { text: string; n: number } | null;
+  // The crowding cell under the pointer (see CrowdingPanel): the globe dims every object outside
+  // it and draws its rings. Not a filter — Reset leaves it alone, and it clears when the pointer leaves.
+  hoverShell: Shell | null;
+  // Whether the expanded crowding view is open (see CrowdingView).
+  crowdingView: boolean;
+  pinShell: (s: Shell | null) => void;
+  setHoverShell: (s: Shell | null) => void;
+  setCrowdingView: (open: boolean) => void;
   toggleType: (t: ObjectType) => void;
   setOwners: (codes: string[]) => void;
   toggleOrbit: (k: keyof Orbits) => void;
@@ -98,6 +107,8 @@ const initial = (): Filters &
     | "offFit"
     | "fitRequest"
     | "announcement"
+    | "hoverShell"
+    | "crowdingView"
   > => ({
   types: [...OBJECT_TYPES],
   owners: [],
@@ -117,6 +128,9 @@ const initial = (): Filters &
   offFit: false,
   fitRequest: 0,
   announcement: null,
+  shell: null,
+  hoverShell: null,
+  crowdingView: false,
 });
 
 export const useExplorer = create<ExplorerState>((set, get) => ({
@@ -175,8 +189,8 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
     get().select(o.norad_id);
   },
   resetFilters: () => {
-    const { types, owners, orbits } = initial();
-    set({ types, owners, orbits });
+    const { types, owners, orbits, shell } = initial();
+    set({ types, owners, orbits, shell });
   },
   setOwnerDirectory: (ownerDirectory) => set({ ownerDirectory }),
   openPanel: (id) =>
@@ -189,6 +203,9 @@ export const useExplorer = create<ExplorerState>((set, get) => ({
   setOffFit: (offFit) => set({ offFit }),
   requestFit: () => set((s) => ({ fitRequest: s.fitRequest + 1 })),
   announce: (text) => set((s) => ({ announcement: { text, n: (s.announcement?.n ?? 0) + 1 } })),
+  pinShell: (shell) => set({ shell }),
+  setHoverShell: (hoverShell) => set({ hoverShell }),
+  setCrowdingView: (crowdingView) => set({ crowdingView }),
   reset: () => set(initial()),
 }));
 
@@ -197,12 +214,18 @@ export function regimesFor(orbits: Orbits): Regime[] | undefined {
   return orbits.leo ? ["LEO"] : ["MEO", "GEO", "HEO"];
 }
 
+/** Visibility on the globe. A record without orbit numbers (a search result) can't be placed in a
+ * pinned shell, so it counts as outside it. */
 export function isVisible(
-  record: { type: ObjectType; owner: string },
+  record: { type: ObjectType; owner: string; meanMotion?: number; eccentricity?: number; inclination?: number },
   group: "LEO" | "HIGH",
-  s: Filters,
+  s: Omit<Filters, "shell"> & { shell?: Shell | null },
 ): boolean {
   if (group === "LEO" ? !s.orbits.leo : !s.orbits.high) return false;
   if (!s.types.includes(record.type)) return false;
-  return s.owners.length === 0 || s.owners.includes(record.owner);
+  if (s.owners.length > 0 && !s.owners.includes(record.owner)) return false;
+  if (!s.shell) return true;
+  const { meanMotion, eccentricity, inclination } = record;
+  if (meanMotion === undefined || eccentricity === undefined || inclination === undefined) return false;
+  return inShell({ meanMotion, eccentricity, inclination }, s.shell);
 }

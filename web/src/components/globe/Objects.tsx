@@ -52,10 +52,11 @@ export function Objects({
   const owners = useExplorer((s) => s.owners);
   const orbits = useExplorer((s) => s.orbits);
   const selectedId = useExplorer((s) => s.selectedId);
+  const shell = useExplorer((s) => s.shell);
 
   const visible = useMemo(
-    () => view.map((r) => isVisible(r, group, { types, owners, orbits })),
-    [view, group, types, owners, orbits],
+    () => view.map((r) => isVisible(r, group, { types, owners, orbits, shell })),
+    [view, group, types, owners, orbits, shell],
   );
 
   const atlas = useMemo(() => createAtlasTexture(), []);

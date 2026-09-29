@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { shellLabel } from "@/lib/crowding/shell";
 import { filterScope, isDefaultFilters, orbitsText, ownerText, typesText } from "@/lib/filterSummary";
 import { focusFiltersEntry } from "@/lib/focusFilters";
 import { useExplorer } from "@/lib/store";
@@ -11,12 +12,13 @@ export function FilterSummary() {
   const types = useExplorer((s) => s.types);
   const owners = useExplorer((s) => s.owners);
   const orbits = useExplorer((s) => s.orbits);
+  const shell = useExplorer((s) => s.shell);
   const directory = useExplorer((s) => s.ownerDirectory);
   const resetFilters = useExplorer((s) => s.resetFilters);
   const openPanel = useExplorer((s) => s.openPanel);
   const announce = useExplorer((s) => s.announce);
   const descId = useId();
-  const f = { types, owners, orbits };
+  const f = { types, owners, orbits, shell };
   if (isDefaultFilters(f)) return null;
   const owner = ownerText(f.owners, directory);
   const label = `Showing ${filterScope(f, directory)}`;
@@ -53,6 +55,12 @@ export function FilterSummary() {
           <span className="inline-block max-w-[16ch] truncate align-bottom" title={owner}>{owner}</span>
           <span className="text-ink-3"> · </span>
           {typesText(f.types)}
+          {f.shell && (
+            <>
+              <span className="text-ink-3"> · </span>
+              {shellLabel(f.shell)}
+            </>
+          )}
         </span>
         <span className="hidden short:inline">Filtered</span>
       </button>
