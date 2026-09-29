@@ -40,4 +40,13 @@ describe("filterSummary", () => {
     expect(filterScope({ types: ALL, owners: [], orbits: LEO }, [])).toBe("Low Earth orbit · All owners · all types");
     expect(ownersChartScope(f)).toBe("All owners, ranked · Higher orbits · 3 of 4 types");
   });
+
+  it("counts a pinned shell as a filter and names it in the summary", () => {
+    const f = { types: ALL, owners: [], orbits: LEO };
+    expect(isDefaultFilters({ ...f, shell: { row: 11, col: 27 } })).toBe(false);
+    expect(filterScope({ ...f, shell: { row: 11, col: 27 } }, [])).toBe(
+      "Low Earth orbit · All owners · all types · Shell 450–475 km · 52.5–54.5°",
+    );
+    expect(filterScope({ ...f, shell: null }, [])).toBe("Low Earth orbit · All owners · all types");
+  });
 });

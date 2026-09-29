@@ -7,9 +7,9 @@ const mem = () => {
 };
 
 describe("panels", () => {
-  it("lists six panels in dock order with the spec defaults", () => {
-    expect(PANELS.map((p) => p.id)).toEqual(["search", "filters", "overview", "history", "owners", "chat"]);
-    expect(DEFAULT_VISIBILITY).toEqual({ overview: true, search: true, history: true, owners: true, filters: false, chat: false });
+  it("lists seven panels in dock order with the spec defaults", () => {
+    expect(PANELS.map((p) => p.id)).toEqual(["search", "filters", "overview", "history", "owners", "crowding", "chat"]);
+    expect(DEFAULT_VISIBILITY).toEqual({ overview: true, search: true, history: true, owners: true, crowding: true, filters: false, chat: false });
   });
 
   it("names a 'soon' panel's button with its tag", () => {

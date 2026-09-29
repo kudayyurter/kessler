@@ -272,6 +272,23 @@ aws lambda invoke --function-name kessler-jobs --cli-binary-format raw-in-base64
   --cli-read-timeout 900 --payload '{"job":"publish-globe"}' out.json && cat out.json
 ```
 
+**Crowding files.** Every `ingest-gp` and `publish-globe` run also writes today's crowding file
+(`crowding/days/<UTC date>.bin.gz`) and `crowding/index.json`. To repair them without touching the
+globe:
+
+```bash
+aws lambda invoke --function-name kessler-jobs --cli-binary-format raw-in-base64-out \
+  --cli-read-timeout 900 --payload '{"job":"publish-crowding"}' out.json && cat out.json
+```
+
+Once, after the first deploy that includes crowding, rebuild the days since 2026-09-25 from the
+orbit-history archive (it never overwrites an existing day, so rerunning it is harmless):
+
+```bash
+aws lambda invoke --function-name kessler-jobs --cli-binary-format raw-in-base64-out \
+  --cli-read-timeout 900 --payload '{"job":"backfill-crowding"}' out.json && cat out.json
+```
+
 **Read logs:**
 
 ```bash

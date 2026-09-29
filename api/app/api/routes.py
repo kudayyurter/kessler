@@ -1,11 +1,14 @@
 import gzip
 import hashlib
-from datetime import UTC, datetime
+import re
+from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
 import psycopg
 from fastapi import APIRouter, Depends, Path, Query, Request, Response
 
+from app.crowding.format import INDEX_KEY, day_key
+from app.crowding.publish import load_index
 from app.errors import ApiError
 from app.ingest.runlog import last_success
 from app.ingest.snapshot import (
@@ -205,3 +208,43 @@ def globe_names_route(
         return Response(status_code=304, headers=headers)
     return Response(content=gzip.decompress(data), media_type="application/json",
                     headers=headers)
+
+
+CROWDING_INDEX_CACHE = "public, max-age=60, s-maxage=60"
+CROWDING_LATEST_CACHE = "public, max-age=60, s-maxage=300"
+# [0-9], not \d: \d also matches non-ASCII digits (e.g. fullwidth), which fromisoformat rejects.
+DAY_PATTERN = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+
+@router.get("/crowding/index")
+def crowding_index(request: Request) -> Response:
+    data = request.app.state.store.get(INDEX_KEY)
+    if data is None:
+        raise ApiError(404, "not_found", "no crowding data published yet")
+    return Response(content=data, media_type="application/json",
+                    headers={"Cache-Control": CROWDING_INDEX_CACHE})
+
+
+@router.get("/crowding/day/{day}")
+def crowding_day(request: Request, day: str, gen: Generation = None) -> Response:
+    """One day's CRW1 file. Days before the index's latest day never change again (immutable);
+    the latest day is rewritten by every run until the day ends, so it gets a short cache and
+    accepts `gen` as a CDN cache-buster, like /meta."""
+    if not DAY_PATTERN.fullmatch(day):
+        raise ApiError(400, "invalid_request", f"not a YYYY-MM-DD date: {day}")
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError as exc:
+        raise ApiError(400, "invalid_request", f"not a valid date: {day}") from exc
+    store = request.app.state.store
+    data = store.get(day_key(parsed))
+    if data is None:
+        raise ApiError(404, "not_found", f"no crowding data for {day}")
+    index = load_index(store)
+    latest = (index.get("latest") or {}).get("day") if index else None
+    cache = IMMUTABLE if latest is not None and day < latest else CROWDING_LATEST_CACHE
+    etag = '"' + hashlib.sha1(data).hexdigest() + '"'
+    headers = {"ETag": etag, "Cache-Control": cache}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return Response(content=data, media_type="application/octet-stream", headers=headers)

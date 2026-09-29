@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
-import { applyFrame, artScale, buildObjectGeometry, dotScale, frameAlpha, lodFade, selectionScale, setVisibility, LOD_DOTS_BELOW_PX, LOD_ICONS_ABOVE_PX } from "@/components/globe/objectPoints";
+import { applyFrame, artScale, buildObjectGeometry, dotScale, frameAlpha, lodFade, selectionScale, setVisibility, DIM_LEVEL, LOD_DOTS_BELOW_PX, LOD_ICONS_ABOVE_PX } from "@/components/globe/objectPoints";
 import { kindColour, spriteRow } from "@/components/globe/spriteAtlas";
 import { SPRITES, variantOf } from "@/components/globe/objectSprites";
 import type { OrbitRecord } from "@/lib/snapshot";
@@ -40,6 +40,12 @@ describe("buildObjectGeometry", () => {
   it("starts hidden until visibility is set", () => {
     expect(attr("aVisible")).toEqual([0, 0, 0, 0]);
     setVisibility(g, [true, false, true, true]);
+    expect(attr("aVisible")).toEqual([1, 0, 1, 1]);
+  });
+  it("dims visible objects outside a highlight and keeps hidden ones hidden", () => {
+    setVisibility(g, [true, false, true, true], [true, true, false, false]);
+    expect(attr("aVisible")).toEqual([1, 0, DIM_LEVEL, DIM_LEVEL].map((v) => Math.fround(v)));
+    setVisibility(g, [true, false, true, true], null);
     expect(attr("aVisible")).toEqual([1, 0, 1, 1]);
   });
 });

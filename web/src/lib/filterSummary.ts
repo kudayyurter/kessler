@@ -1,16 +1,20 @@
 import { OBJECT_TYPES, type ObjectType, type OwnerSummary } from "@/lib/types";
 import { ownerDisplay } from "@/lib/ownerPicker";
+import { shellLabel, type Shell } from "@/lib/crowding/shell";
 
 export type Orbits = { leo: boolean; high: boolean };
 export interface FilterState {
   types: readonly ObjectType[];
   owners: readonly string[];
   orbits: Orbits;
+  /** A pinned crowding cell. The History and Owners scope lines leave it out (their numbers
+   * can't be cut by shell), so they don't pass it. */
+  shell?: Shell | null;
 }
 
-/** Low Earth orbit only, all owners, all four types. */
+/** Low Earth orbit only, all owners, all four types, no pinned shell. */
 export function isDefaultFilters(f: FilterState): boolean {
-  return f.orbits.leo && !f.orbits.high && f.owners.length === 0 && f.types.length === OBJECT_TYPES.length;
+  return f.orbits.leo && !f.orbits.high && f.owners.length === 0 && f.types.length === OBJECT_TYPES.length && !f.shell;
 }
 
 export function orbitsText(o: Orbits): string {
@@ -28,9 +32,12 @@ export function ownerText(owners: readonly string[], list: readonly OwnerSummary
   return o ? ownerDisplay(o) : owners[0];
 }
 
-/** "Higher orbits · 🇺🇸 United States · 3 of 4 types" — the summary pill and the History scope line. */
+/** "Higher orbits · 🇺🇸 United States · 3 of 4 types[ · Shell 450–475 km · 52.5–54.5°]" — the summary
+ * pill and the History scope line (which passes no shell). */
 export function filterScope(f: FilterState, list: readonly OwnerSummary[]): string {
-  return [orbitsText(f.orbits), ownerText(f.owners, list), typesText(f.types)].join(" · ");
+  const parts = [orbitsText(f.orbits), ownerText(f.owners, list), typesText(f.types)];
+  if (f.shell) parts.push(shellLabel(f.shell));
+  return parts.join(" · ");
 }
 
 /** The Owners chart ranks all owners, so its scope names no owner. */

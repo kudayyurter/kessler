@@ -1,8 +1,9 @@
 """Entry point of the `kessler-jobs` Lambda (image target `jobs`).
 
 EventBridge Scheduler invokes it with {"job": "ingest-satcat"} or {"job": "ingest-gp"}. The
-deploy workflow invokes {"job": "migrate"} and then {"job": "publish-globe"}; the owner can run
-{"job": "all"} once to load data.
+deploy workflow invokes {"job": "migrate"} and then {"job": "publish-globe"} (which also publishes
+today's crowding file); the owner can run {"job": "all"} once to load data, and
+{"job": "backfill-crowding"} once after the first crowding deploy.
 """
 import json
 import logging

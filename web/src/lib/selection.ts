@@ -1,3 +1,4 @@
+import type { Shell } from "@/lib/crowding/shell";
 import type { FilterState, Orbits } from "@/lib/filterSummary";
 import { fmtDate } from "@/lib/format";
 import type { GroupStatus } from "@/lib/globeData";
@@ -16,18 +17,19 @@ export interface Findable {
  * loaded data. */
 export type GlobePresence = "pending" | "shown" | "absent";
 
+type FilterChanges = { types?: ObjectType[]; owners?: string[]; orbits?: Orbits; shell?: null };
+
 /** The filter changes that make `o` visible on the globe, or null when none are needed — or none
- * would help (re-entered and beyond-Earth-orbit objects are never on the globe). */
-export function filtersToShow(
-  o: Findable,
-  f: FilterState,
-): { types?: ObjectType[]; owners?: string[]; orbits?: Orbits } | null {
+ * would help (re-entered and beyond-Earth-orbit objects are never on the globe). A pinned crowding
+ * shell is always cleared: a search result carries no orbit to test against it. */
+export function filtersToShow(o: Findable, f: FilterState & { shell?: Shell | null }): FilterChanges | null {
   if (o.decayed || o.regime === "OTHER") return null;
-  const changes: { types?: ObjectType[]; owners?: string[]; orbits?: Orbits } = {};
+  const changes: FilterChanges = {};
   const high = o.regime !== "LEO";
   if (high ? !f.orbits.high : !f.orbits.leo) changes.orbits = { ...f.orbits, [high ? "high" : "leo"]: true };
   if (!f.types.includes(o.object_type)) changes.types = OBJECT_TYPES.filter((t) => t === o.object_type || f.types.includes(t));
   if (f.owners.length > 0 && !f.owners.includes(o.owner)) changes.owners = [];
+  if (f.shell) changes.shell = null;
   return Object.keys(changes).length ? changes : null;
 }
 

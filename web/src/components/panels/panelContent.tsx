@@ -8,6 +8,7 @@ import type { BreakdownResponse, Meta, TimeseriesResponse } from "@/lib/types";
 import { BarChart } from "@/components/charts/BarChart";
 import { DataDisclosure, HistoryDataTable, OwnersDataTable } from "@/components/charts/ChartData";
 import { LineChart } from "@/components/charts/LineChart";
+import { CrowdingPanel } from "@/components/crowding/CrowdingPanel";
 import { ChatPanel } from "@/components/panels/ChatPanel";
 import { Filters } from "@/components/panels/Filters";
 import { ObjectCard } from "@/components/panels/ObjectCard";
@@ -74,6 +75,7 @@ export const PANEL_CONTENT: Record<PanelId, (c: PanelCtx) => React.ReactNode> = 
     </div>
   ),
   owners: (c) => <OwnersChart c={c} />,
+  crowding: () => <CrowdingPanel />,
   filters: (c) => <Filters meta={c.meta.data} />,
   chat: () => <ChatPanel />,
 };

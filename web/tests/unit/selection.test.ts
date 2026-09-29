@@ -37,6 +37,10 @@ describe("filtersToShow", () => {
     expect(filtersToShow(obj({ decayed: true, object_type: "DEB", owner: "PRC" }), hidden)).toBeNull();
     expect(filtersToShow(obj({ regime: "OTHER", object_type: "DEB" }), hidden)).toBeNull();
   });
+
+  it("clears a pinned shell", () => {
+    expect(filtersToShow(obj(), { ...DEFAULT, shell: { row: 11, col: 27 } })).toEqual({ shell: null });
+  });
 });
 
 describe("noPositionReason", () => {
