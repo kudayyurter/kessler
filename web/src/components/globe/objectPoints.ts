@@ -63,10 +63,15 @@ export function buildObjectGeometry(records: OrbitRecord[]): THREE.BufferGeometr
   return g;
 }
 
-export function setVisibility(g: THREE.BufferGeometry, visible: boolean[]): void {
+/** Brightness of a visible object outside the hovered crowding cell. */
+export const DIM_LEVEL = 0.2;
+
+/** Writes each object's brightness into aVisible: 0 hides it, 1 draws it normally, DIM_LEVEL dims
+ * it (visible, but outside `highlight` while one is given). */
+export function setVisibility(g: THREE.BufferGeometry, visible: boolean[], highlight: boolean[] | null = null): void {
   const attr = g.getAttribute("aVisible") as THREE.BufferAttribute;
   const a = attr.array as Float32Array;
-  for (let i = 0; i < a.length; i++) a[i] = visible[i] ? 1 : 0;
+  for (let i = 0; i < a.length; i++) a[i] = !visible[i] ? 0 : highlight === null || highlight[i] ? 1 : DIM_LEVEL;
   attr.needsUpdate = true;
 }
 

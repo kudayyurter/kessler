@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { earthRadiusPx } from "@/lib/camera";
 import { simClock } from "@/lib/clock";
 import type { OrbitRecord } from "@/lib/snapshot";
+import { inShell } from "@/lib/crowding/shell";
 import { isVisible, useExplorer } from "@/lib/store";
 import type { Locator } from "@/components/globe/flyTo";
 import { usePropagation, type PropagationFrames } from "@/components/globe/usePropagation";
@@ -58,6 +59,11 @@ export function Objects({
     () => view.map((r) => isVisible(r, group, { types, owners, orbits, shell })),
     [view, group, types, owners, orbits, shell],
   );
+  const hoverShell = useExplorer((s) => s.hoverShell);
+  const highlight = useMemo(
+    () => (hoverShell ? view.map((r) => inShell(r, hoverShell)) : null),
+    [view, hoverShell],
+  );
 
   const atlas = useMemo(() => createAtlasTexture(), []);
   const material = useMemo(() => createObjectMaterial(atlas), [atlas]);
@@ -76,7 +82,7 @@ export function Objects({
   // could be deferred past the next paint/rAF, letting R3F draw the new geometry (all points
   // hidden, per buildObjectGeometry's zeroed aVisible) or hand Picker/LabelDriver the old records
   // against the already-swapped frames for one frame.
-  useLayoutEffect(() => setVisibility(geometry, visible), [geometry, visible]);
+  useLayoutEffect(() => setVisibility(geometry, visible, highlight), [geometry, visible, highlight]);
 
   const indexById = useMemo(() => new Map(view.map((r, i) => [r.noradId, i])), [view]);
   useLayoutEffect(() => {

@@ -13,7 +13,8 @@ const f = (n: number) => n.toFixed(1);
 // sprite for that direction. Sprites scale smoothly (uArt CSS px per sprite pixel, any real number); sampling is
 // "sharp bilinear" — each sprite pixel stays a solid block and only the one-device-pixel seam between two
 // sprite pixels blends — so fractional scales neither blur nor show uneven 2 px / 3 px pixel columns. Which
-// objects are icons is fixed per object (a hash of its index) and grows with uFade.
+// objects are icons is fixed per object (a hash of its index) and grows with uFade. aVisible is a brightness: 0
+// hides the object, 1 draws it as is, lower values dim it (the crowding panel's hover).
 const vertexShader = /* glsl */ `
 attribute vec3 aPrev;
 attribute float aSprite;
@@ -33,6 +34,7 @@ flat varying float vSector;
 flat varying float vIcon;
 flat varying float vSizeCss;
 flat varying vec3 vColor;
+flat varying float vBright;
 
 float hash(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
 
@@ -41,7 +43,7 @@ void main() {
   vec4 clip = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   // Failed propagations are NaN; comparisons with NaN are false, so they fail this finite-range check too.
   bool finite = abs(p.x) < 1.0e4 && abs(p.y) < 1.0e4 && abs(p.z) < 1.0e4;
-  if (aVisible < 0.5 || !finite || clip.w <= 0.0) {
+  if (aVisible < 0.01 || !finite || clip.w <= 0.0) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     gl_PointSize = 0.0;
     return;
@@ -65,6 +67,7 @@ void main() {
   gl_PointSize = sizePx;
   vSprite = aSprite;
   vColor = aColor;
+  vBright = aVisible;
 }`;
 
 const fragmentShader = /* glsl */ `
@@ -79,6 +82,7 @@ flat varying float vSector;
 flat varying float vIcon;
 flat varying float vSizeCss;
 flat varying vec3 vColor;
+flat varying float vBright;
 
 void main() {
   vec4 col = vec4(vColor, 1.0);
@@ -108,6 +112,7 @@ void main() {
       col = vec4(col.rgb / col.a, 1.0); // empty texels are transparent black: undo their darkening at shape edges
     }
   }
+  col.rgb *= vBright;
   gl_FragColor = col;
   #include <colorspace_fragment>
 }`;

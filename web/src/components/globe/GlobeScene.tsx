@@ -15,6 +15,7 @@ import { flyTo, locate, type Locator } from "@/components/globe/flyTo";
 import { LabelDriver } from "@/components/globe/LabelDriver";
 import { Objects, type LabelSource } from "@/components/globe/Objects";
 import { Picker } from "@/components/globe/Picker";
+import { ShellRings } from "@/components/globe/ShellRings";
 
 declare global {
   interface Window {
@@ -268,6 +269,7 @@ export function GlobeScene({
       <Earth />
       {leo && <Objects records={leo} group="LEO" onReady={onReadyLeo} active={active} onLabelSource={onLeoLabels} />}
       {high && <Objects records={high} group="HIGH" onReady={onReadyHigh} active={active} onLabelSource={onHighLabels} />}
+      <ShellRings />
       {/* maxDistance must never clamp the fitted whole-Earth distance itself (small phones, a short
           gap above the sheet, can need well past 12) — drei calls controls.update() every frame,
           and three-stdlib's own radius clamp would otherwise pin the camera inside that distance,
