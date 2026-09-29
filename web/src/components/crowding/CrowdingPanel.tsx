@@ -22,6 +22,7 @@ export function CrowdingPanel() {
   const pinShell = useExplorer((s) => s.pinShell);
   const setHoverShell = useExplorer((s) => s.setHoverShell);
   const announce = useExplorer((s) => s.announce);
+  const setCrowdingView = useExplorer((s) => s.setCrowdingView);
   const leo = useExplorer((s) => s.orbits.leo);
   const [hover, setHover] = useState<Cell | null>(null);
   const helpId = useId();
@@ -45,6 +46,17 @@ export function CrowdingPanel() {
   };
   return (
     <div>
+      <div className="mb-1 flex justify-end">
+        <button
+          type="button"
+          data-crowding-expand
+          aria-label="Expand crowding view"
+          onClick={() => setCrowdingView(true)}
+          className="min-h-7 rounded-full border-2 border-line bg-[#121212] px-2.5 text-[11px] text-ink-2 hover:text-ink"
+        >
+          ⤢ Expand
+        </button>
+      </div>
       <div className="flex gap-1.5">
         <GridCanvas
           values={data.total}

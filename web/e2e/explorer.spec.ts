@@ -1355,4 +1355,53 @@ test.describe("crowding", () => {
     await expect(panel.getByText("Data unavailable: crowding.")).toBeVisible();
     await expect(panel.getByRole("button", { name: "Retry" })).toBeVisible();
   });
+
+  test("the expanded view compares days by cause and pins a cell from its card", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    const expand = page.getByRole("button", { name: "Expand crowding view" });
+    await expand.click();
+    const dialog = page.getByRole("dialog", { name: "Crowding by altitude × inclination" });
+    await expect(dialog.getByRole("heading", { name: "Crowding by altitude × inclination" })).toBeFocused();
+    await dialog.getByRole("button", { name: "Change" }).click();
+    await expect(dialog.getByText(
+      "Since 09-22 18:41 UTC: +1 newly catalogued · −1 re-entered · −1 no longer tracked · 1 moved between cells · net −1",
+    )).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "7 d" })).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: "7 d" })).toHaveAttribute("title", "needs 7 days of history");
+    await expect(dialog.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    const p = await cellPoint(dialog.getByRole("group", { name: "Crowding map" }), 14, 35);
+    await page.mouse.click(p.x, p.y);
+    const card = dialog.getByTestId("cell-card");
+    await expect(card).toContainText("525–550 km · 68.5–70.5°");
+    await expect(card).toContainText("moved out");
+    await expect(card).toContainText("301: 530 → 505 km");
+    await card.getByRole("button", { name: "Show on globe" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByTestId("filter-summary")).toContainText("Shell 525–550 km · 68.5–70.5°");
+    await expect(expand).toBeFocused();
+  });
+
+  test("Escape closes the expanded view and returns focus to Expand", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    const expand = page.getByRole("button", { name: "Expand crowding view" });
+    await expand.click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Crowding by altitude × inclination" })).toHaveCount(0);
+    await expect(expand).toBeFocused();
+  });
+
+  test("the timeline steps through the days", async ({ page }) => {
+    await mockApi(page);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Expand crowding view" }).click();
+    const dialog = page.getByRole("dialog", { name: "Crowding by altitude × inclination" });
+    const day = dialog.getByRole("slider", { name: "Day" });
+    await expect(day).toHaveAttribute("aria-valuetext", "2026-09-23");
+    await day.focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(day).toHaveAttribute("aria-valuetext", "2026-09-22");
+    await expect(dialog.getByText("09-22 18:41")).toBeVisible();
+  });
 });

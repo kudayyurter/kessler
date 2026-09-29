@@ -1,4 +1,5 @@
 import { busiestShell, cellIndex, cellLabel, FIRST_LEO_ROW, LAST_LEO_ROW, rowLabel, shellDensity, type Cell, type CrowdingMap } from "@/lib/crowding/grid";
+import type { CrowdingChange, Mover } from "@/lib/crowding/change";
 import { fmtInt } from "@/lib/format";
 import { OBJECT_TYPES, type ObjectType } from "@/lib/types";
 
@@ -38,4 +39,47 @@ export function cellSummary(map: CrowdingMap, cell: Cell): { title: string; line
 export function cellAnnouncement(map: CrowdingMap, cell: Cell): string {
   const s = cellSummary(map, cell);
   return [s.title, ...s.lines].join(". ");
+}
+
+/** "09-22 18:41" from an ISO time (UTC). */
+export function shortStamp(iso: string): string {
+  return `${iso.slice(5, 10)} ${iso.slice(11, 16)}`;
+}
+
+const signed = (n: number, fmt: (v: number) => string) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${fmt(Math.abs(n))}`;
+
+export function summaryLine(counts: CrowdingChange["counts"], fromStamp: string): string {
+  const net = counts.new - counts.reentered - counts.untracked;
+  const parts = [`+${fmtInt(counts.new)} newly catalogued`, `−${fmtInt(counts.reentered)} re-entered`];
+  if (counts.untracked > 0) parts.push(`−${fmtInt(counts.untracked)} no longer tracked`);
+  parts.push(`${fmtInt(counts.moved)} moved between cells`, `net ${signed(net, fmtInt)}`);
+  return `Since ${fromStamp} UTC: ${parts.join(" · ")}`;
+}
+
+export function changeCardRows(change: CrowdingChange, cell: Cell): { label: string; value: string }[] {
+  const k = cellIndex(cell.row, cell.col);
+  const rows = [
+    { label: "net change", value: signed(change.net[k], fmtAvg) },
+    { label: "moved out", value: fmtAvg(change.cause.movedOut[k]) },
+    { label: "moved in", value: fmtAvg(change.cause.movedIn[k]) },
+    { label: "newly catalogued", value: fmtAvg(change.cause.new[k]) },
+    { label: "re-entered", value: fmtAvg(change.cause.reentered[k]) },
+  ];
+  if (change.cause.untracked[k] > 0) rows.push({ label: "no longer tracked", value: fmtAvg(change.cause.untracked[k]) });
+  return rows;
+}
+
+export function changeAnnouncement(change: CrowdingChange, cell: Cell): string {
+  return `${cellLabel(cell)}. ${changeCardRows(change, cell).map((r) => `${r.label} ${r.value}`).join(", ")}`;
+}
+
+const km = (altKm: number) => fmtInt(Math.round(altKm));
+
+export function moverLine(m: Mover, name: string): string {
+  if (m.cause === "new") return `${name}: newly catalogued at ${km(m.after!.altKm)} km`;
+  if (m.cause === "reentered") return `${name}: re-entered`;
+  if (m.cause === "untracked") return `${name}: no longer tracked`;
+  const { before, after } = m as { before: NonNullable<Mover["before"]>; after: NonNullable<Mover["after"]> };
+  const inc = Math.abs(after.incDeg - before.incDeg) >= 0.1 ? `, ${ONE_DECIMAL.format(before.incDeg)}° → ${ONE_DECIMAL.format(after.incDeg)}°` : "";
+  return `${name}: ${km(before.altKm)} → ${km(after.altKm)} km${inc}`;
 }

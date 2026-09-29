@@ -9,6 +9,7 @@ import { regimesFor, useExplorer } from "@/lib/store";
 import { useSheetLayout } from "@/lib/useIsMobile";
 import type { Meta, TimeseriesResponse } from "@/lib/types";
 import { CrowdingProvider } from "@/components/crowding/CrowdingProvider";
+import { CrowdingView } from "@/components/crowding/CrowdingView";
 import { MobileSheet } from "@/components/layout/MobileSheet";
 import { Panel } from "@/components/layout/Panel";
 import { PanelColumn } from "@/components/layout/PanelColumn";
@@ -139,6 +140,7 @@ export default function Explorer() {
             </PanelColumn>
           </div>
         )}
+        <CrowdingView />
       </CrowdingProvider>
     </main>
   );
