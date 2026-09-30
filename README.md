@@ -60,7 +60,7 @@ cp .env.example .env.local
 npm install && npm run dev
 ```
 
-Tests, jobs and deployment are covered in [`api/README.md`](api/README.md), [`web/README.md`](web/README.md) and [`infra/README.md`](infra/README.md).
+Tests, jobs and deployment are covered in [`api/README.md`](api/README.md), [`web/README.md`](web/README.md) and [`infra/README.md`](infra/README.md); the go-live runbook is [`docs/deploy.md`](docs/deploy.md).
 
 ## Credits and license
 
