@@ -1,0 +1,13 @@
+{
+  "alt": "Space-Track and CelesTrak feed Lambda ingest jobs, which write Postgres on Neon and S3 snapshots; FastAPI on Lambda serves them to Next.js on Vercel over SigV4, and the browser runs SGP4 and WebGL.",
+  "nodes": [
+    {"id": "src", "title": "Space-Track", "sub": "CelesTrak", "icon": "lucide:satellite", "shape": "external"},
+    {"id": "jobs", "title": "Ingest jobs", "sub": "Lambda", "icon": "aws"},
+    {"id": "db", "title": "Postgres", "sub": "Neon", "icon": "postgresql", "shape": "store"},
+    {"id": "s3", "title": "Snapshots", "sub": "S3", "icon": "aws", "shape": "store"},
+    {"id": "api", "title": "FastAPI", "sub": "Lambda", "icon": "fastapi"},
+    {"id": "web", "title": "Next.js", "sub": "Vercel", "icon": "nextdotjs"},
+    {"id": "browser", "title": "Browser", "sub": "SGP4 + WebGL", "icon": "threedotjs", "shape": "client"}
+  ],
+  "edges": [["src", "jobs"], ["jobs", "db"], ["jobs", "s3"], ["db", "api"], ["s3", "api"], ["api", "web", "SigV4"], ["web", "browser"]]
+}
