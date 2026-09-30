@@ -6,7 +6,7 @@
 
 [Live site](https://kessler.kudayyurter.dev) · [How it works](#how-it-works) · [Run locally](#run-locally)
 
-<img src=".github/assets/demo.gif" alt="Kessler's 3D globe turning with about 30,000 tracked objects, beside the Overview, History, Search and Crowding panels" width="880">
+<img src=".github/assets/demo.gif" alt="Typing ISS into Search and picking ISS (ZARYA) flies the 3D globe to the space station, labels it among nearby satellites, and shows its orbit details" width="880">
 
 </div>
 
