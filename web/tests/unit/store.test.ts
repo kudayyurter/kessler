@@ -215,9 +215,9 @@ describe("selection and filter actions", () => {
 describe("data tables", () => {
   it("start closed and toggle per chart", () => {
     useExplorer.getState().reset();
-    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false });
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: false, crowding: false });
     useExplorer.getState().toggleDataTable("owners");
-    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true });
+    expect(useExplorer.getState().dataTablesOpen).toEqual({ history: false, owners: true, crowding: false });
   });
 });
 
@@ -241,5 +241,35 @@ describe("announcements", () => {
     useExplorer.getState().announce("Filters reset");
     useExplorer.getState().announce("Filters reset");
     expect(useExplorer.getState().announcement).toEqual({ text: "Filters reset", n: 2 });
+  });
+});
+
+describe("pinned shell", () => {
+  const hot = { row: 11, col: 27 };
+  const iss = { type: "PAY" as const, owner: "US", meanMotion: 15.3531, eccentricity: 0.0001, inclination: 53.05 };
+
+  it("pins and unpins a shell as a filter that Reset clears; hover is separate", () => {
+    const s = useExplorer.getState();
+    s.pinShell(hot);
+    s.setHoverShell({ row: 12, col: 27 });
+    expect(useExplorer.getState().shell).toEqual(hot);
+    useExplorer.getState().resetFilters();
+    expect(useExplorer.getState().shell).toBeNull();
+    expect(useExplorer.getState().hoverShell).toEqual({ row: 12, col: 27 });
+  });
+
+  it("hides objects outside a pinned shell", () => {
+    const s = useExplorer.getState();
+    expect(isVisible(iss, "LEO", { ...s, shell: hot })).toBe(true);
+    expect(isVisible({ ...iss, inclination: 60 }, "LEO", { ...s, shell: hot })).toBe(false);
+    expect(isVisible({ type: "PAY", owner: "US" }, "LEO", { ...s, shell: hot })).toBe(false);
+    expect(isVisible({ type: "PAY", owner: "US" }, "LEO", { ...s, shell: null })).toBe(true);
+  });
+
+  it("opens and closes the crowding view", () => {
+    useExplorer.getState().setCrowdingView(true);
+    expect(useExplorer.getState().crowdingView).toBe(true);
+    useExplorer.getState().setCrowdingView(false);
+    expect(useExplorer.getState().crowdingView).toBe(false);
   });
 });

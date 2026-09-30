@@ -90,6 +90,23 @@ export interface GlobeCurrent {
   groups: Record<GlobeGroup, { count: number }>;
 }
 
+export interface CrowdingIndexDay {
+  day: string;
+  generated_at: string;
+  count: number;
+  source: "live" | "archive";
+  generation: string | null;
+}
+
+export interface CrowdingIndex {
+  version: number;
+  history_start: string;
+  days: CrowdingIndexDay[];
+  latest: { day: string; generation: string | null } | null;
+  /** NORAD ID → decay date, for objects that re-entered since history_start. */
+  reentries: Record<string, string>;
+}
+
 export const api = {
   meta: (gen?: string) => getJson<Meta>(`/meta${buildQuery({ gen })}`),
   timeseries: (q: TimeseriesQuery) => getJson<TimeseriesResponse>(`/stats/timeseries${buildQuery({ ...q })}`),
@@ -111,6 +128,21 @@ export const api = {
   },
   async snapshot(group: GlobeGroup, generation?: string): Promise<Uint8Array | null> {
     const res = await fetchGlobeFile("/globe/snapshot", group, generation);
+    if (res.status === 404) return null;
+    if (!res.ok) throw await toError(res);
+    return new Uint8Array(await res.arrayBuffer());
+  },
+  /** The crowding index, or null before the first crowding publication. `gen` busts the CDN's
+   * short cache after a new globe generation (see CrowdingProvider). */
+  async crowdingIndex(gen?: string): Promise<CrowdingIndex | null> {
+    const res = await fetch(`/api/crowding/index${buildQuery({ gen })}`, { signal: AbortSignal.timeout(POINTER_TIMEOUT_MS) });
+    if (res.status === 404) return null;
+    if (!res.ok) throw await toError(res);
+    return (await res.json()) as CrowdingIndex;
+  },
+  /** One day's gzipped CRW1 file, or null when that day has none. */
+  async crowdingDay(day: string, gen?: string): Promise<Uint8Array | null> {
+    const res = await fetch(`/api/crowding/day/${day}${buildQuery({ gen })}`, { signal: AbortSignal.timeout(SNAPSHOT_TIMEOUT_MS) });
     if (res.status === 404) return null;
     if (!res.ok) throw await toError(res);
     return new Uint8Array(await res.arrayBuffer());
