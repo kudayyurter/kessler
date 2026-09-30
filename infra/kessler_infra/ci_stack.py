@@ -14,7 +14,10 @@ class KesslerCiStack(Stack):
         provider = iam.OidcProviderNative(self, "GitHubOidc", url=f"https://{GITHUB_OIDC}",
                                           client_ids=["sts.amazonaws.com"])
         # GitHub's OIDC `sub` claim uses immutable ids by default for newer repos
-        # ("repo:<owner>@<owner_id>/<repo>@<repo_id>:ref:..."), which also survives renames.
+        # ("repo:<owner>@<owner_id>/<repo>@<repo_id>:ref:..."). The ids pin the exact
+        # account and repo, but the owner and repo *names* are still part of the claim:
+        # after renaming either, update `github_repo`/`github_subject_prefix` in cdk.json
+        # and redeploy this stack by hand (CI can't assume the role until you do).
         # The name-based form is kept as a fallback.
         prefixes = [p for p in (github_subject_prefix, f"repo:{github_repo}") if p]
         role = iam.Role(

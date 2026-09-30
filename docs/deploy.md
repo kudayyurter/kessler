@@ -173,7 +173,7 @@ curl -s -o /dev/null -w '%{http_code}\n' "${URL}api/health"                     
 
 ## 8. GitHub
 
-Create the repository (empty, no README/license) at `namelessmonarch0/kessler`.
+Create the repository (empty, no README/license) at `kudayyurter/kessler`.
 
 Before pushing anything, set the deploy job's configuration in the new repo's Settings → Secrets
 and variables → Actions:
@@ -197,7 +197,7 @@ docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo
 Fix anything it flags, then push:
 
 ```bash
-git remote add origin https://github.com/namelessmonarch0/kessler.git
+git remote add origin https://github.com/kudayyurter/kessler.git
 git push -u origin main
 ```
 
@@ -217,7 +217,7 @@ workflow**.
 
 ## 9. Vercel
 
-- New project, imported from `namelessmonarch0/kessler`, **Root Directory** `web`.
+- New project, imported from `kudayyurter/kessler`, **Root Directory** `web`.
 - Project environment variable (Production and Preview) — **owner types this personally**:
   - `API_ORIGIN_URL` = the Function URL from step 7, **without** the trailing slash.
 - Deploy. If the deployment shows **"Canceled by Ignored Build Step"**, that's `ignoreCommand`

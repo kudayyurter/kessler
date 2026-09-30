@@ -3,7 +3,7 @@
   "context": {
     "api_reserved_concurrency": 10,
     "api_url_auth": "AWS_IAM",
-    "github_repo": "namelessmonarch0/kessler",
-    "github_subject_prefix": "repo:namelessmonarch0@186356630/kessler@1304217297"
+    "github_repo": "kudayyurter/kessler",
+    "github_subject_prefix": "repo:kudayyurter@186356630/kessler@1304217297"
   }
 }
