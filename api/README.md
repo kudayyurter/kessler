@@ -9,7 +9,7 @@ cd api
 cp .env.example .env            # add Space-Track credentials if you have them
 docker compose up -d db         # Postgres 16 with pgvector on localhost:5432
 uv sync
-uv run alembic upgrade head
+uv run --env-file .env alembic upgrade head   # env.py reads DATABASE_URL from the environment
 uv run python -m app.jobs all   # ~1–2 min: SATCAT, stats, GP + globe snapshots
 uv run uvicorn app.api.main:create_app --factory --reload
 ```
