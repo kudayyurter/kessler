@@ -1,0 +1,4 @@
+[
+  {"type": "[placeholder^=\"ISS\"]", "text": "ISS", "wait": 1200},
+  {"click": "text=ISS (ZARYA)", "wait": 5000}
+]
