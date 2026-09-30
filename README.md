@@ -48,7 +48,7 @@ You need Docker, [uv](https://docs.astral.sh/uv/) and Node 22. Space-Track crede
 cd api
 cp .env.example .env
 docker compose up -d db
-uv sync && uv run alembic upgrade head
+uv sync && uv run --env-file .env alembic upgrade head
 uv run python -m app.jobs all
 uv run uvicorn app.api.main:create_app --factory --port 8000
 ```
