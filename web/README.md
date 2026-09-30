@@ -161,7 +161,7 @@ Two scheduled GitHub Actions workflows run these:
 
 Both are also `workflow_dispatch`-able. GitHub disables scheduled workflows after 60 days without
 repository activity; if the captures stop, re-enable both workflows from the repository's Actions tab. The current report lives at
-[`audit/AUDIT.md` on the `audit-log` branch](https://github.com/namelessmonarch0/kessler/tree/audit-log/audit).
+[`audit/AUDIT.md` on the `audit-log` branch](https://github.com/kudayyurter/kessler/tree/audit-log/audit).
 
 ### Regenerating fixtures
 
