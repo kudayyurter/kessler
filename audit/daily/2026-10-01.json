@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-01",
+  "commit": "088127836660490ae188e90be55008aafe38b1ec",
+  "generatedAt": "2026-10-01T12:41:32.300075+00:00",
+  "timeMs": 1790861481000,
+  "snapshotAgeHours": 0.8301944444444445,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.04770561903193692,
+      "p95Km": 0.04542904587958066
+    },
+    "DEB": {
+      "n": 161,
+      "maxKm": 0.04489765041345251,
+      "p95Km": 0.04380813573512988
+    },
+    "R/B": {
+      "n": 34,
+      "maxKm": 0.04739374344977643,
+      "p95Km": 0.04493776431798575
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04708158427500061,
+      "p95Km": 0.04708158427500061
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 448,
+      "maxKm": 0.04770561903193692,
+      "p95Km": 0.04493776431798575
+    },
+    "HIGH": {
+      "n": 52,
+      "maxKm": 0.04739374344977643,
+      "p95Km": 0.044039328146871476
+    }
+  },
+  "age": {
+    "p50Days": 0.7245694800002487,
+    "p95Days": 3.0075124899998418,
+    "staleShare": 0.052
+  },
+  "iss": {
+    "groundKm": 0.8529959573210941,
+    "altDiffKm": 0.01887694077413471,
+    "theirs": {
+      "latDeg": 5.8307828828716,
+      "lonDeg": -74.886503341664,
+      "altKm": 425.07539136992,
+      "timestamp": 1790861481
+    }
+  },
+  "worst": [
+    {
+      "noradId": 58359,
+      "name": "STARLINK-30878",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5243988100009495,
+      "groundKm": 0.04770561903193692,
+      "altDiffKm": -0.0001695556861136538,
+      "ok": true
+    },
+    {
+      "noradId": 66606,
+      "name": "STARLINK-36063",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6538687299996835,
+      "groundKm": 0.047550612702016555,
+      "altDiffKm": 0.000020371602545310452,
+      "ok": true
+    },
+    {
+      "noradId": 21228,
+      "name": "DELTA 2 R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 0.5895794100019667,
+      "groundKm": 0.04739374344977643,
+      "altDiffKm": -0.00038579082047363045,
+      "ok": true
+    },
+    {
+      "noradId": 62288,
+      "name": "STARLINK-33565",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5532158699996383,
+      "groundKm": 0.04731689873136047,
+      "altDiffKm": -0.00008550540496798931,
+      "ok": true
+    },
+    {
+      "noradId": 65772,
+      "name": "KUIPER-00152",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.318793229997423,
+      "groundKm": 0.04723113146514695,
+      "altDiffKm": 0.00024079388674635993,
+      "ok": true
+    },
+    {
+      "noradId": 100822,
+      "name": "GUOWANG 26 OBJECT L",
+      "type": "UNK",
+      "regime": "LEO",
+      "ageDays": 7.663496460000498,
+      "groundKm": 0.04708158427500061,
+      "altDiffKm": 0.00035999678266307455,
+      "ok": true
+    },
+    {
+      "noradId": 52352,
+      "name": "STARLINK-3838",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0738671199996384,
+      "groundKm": 0.047050674698158386,
+      "altDiffKm": 0.000015092516264303413,
+      "ok": true
+    },
+    {
+      "noradId": 60041,
+      "name": "STARLINK-11149 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1462628399997288,
+      "groundKm": 0.04632722607251917,
+      "altDiffKm": -0.00012979911804222866,
+      "ok": true
+    },
+    {
+      "noradId": 59676,
+      "name": "STARLINK-31884",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1481577799987792,
+      "groundKm": 0.04631439264863945,
+      "altDiffKm": 0.00000863689587049521,
+      "ok": true
+    },
+    {
+      "noradId": 68354,
+      "name": "CENTISPACE-2 S5",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.8345250499979655,
+      "groundKm": 0.04600729609158402,
+      "altDiffKm": 0.0002373840713971731,
+      "ok": true
+    }
+  ]
+}
