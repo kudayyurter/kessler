@@ -16,6 +16,8 @@ uv run uvicorn app.api.main:create_app --factory --reload
 
 Then open http://localhost:8000/docs.
 
+With access to the `kessler` Infisical project, skip `cp .env.example .env` and prefix the commands with `infisical run --path=/api --` instead (e.g. `infisical run --path=/api -- uv run alembic upgrade head`). Injected variables override any `.env` file.
+
 ## Jobs
 
 | Command | What it does | Production schedule |

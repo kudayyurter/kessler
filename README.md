@@ -60,6 +60,8 @@ cp .env.example .env.local
 npm install && npm run dev
 ```
 
+If you have access to the `kessler` project in [Infisical](https://infisical.com), skip the `cp` steps. Prefix each command with `infisical run --path=/api --` in `api/` or `infisical run --path=/web --` in `web/`, and drop `--env-file .env` from the Alembic command. The CLI reads the project from `.infisical.json` and uses the `dev` environment.
+
 Tests, jobs and deployment are covered in [`api/README.md`](api/README.md), [`web/README.md`](web/README.md) and [`infra/README.md`](infra/README.md); the go-live runbook is [`docs/deploy.md`](docs/deploy.md).
 
 ## Credits and license
