@@ -283,3 +283,37 @@ def test_cdk_json_caps_api_concurrency_and_enforces_iam():
     context = json.loads((Path(__file__).parents[1] / "cdk.json").read_text())["context"]
     assert context["api_reserved_concurrency"] == 10
     assert context["api_url_auth"] == "AWS_IAM"
+
+
+INFISICAL_US_ACCOUNT = "381492033652"
+INFISICAL_KESSLER_PROJECT = "0a2ef5cf-b1b8-4870-9129-76a61c88e4ff"
+
+
+def test_infisical_role_trusts_only_infisical_cloud_with_the_project_external_id(app_template):
+    _, role = _role_by_name(app_template(), "kessler-infisical-sync")
+    (statement,) = role["Properties"]["AssumeRolePolicyDocument"]["Statement"]
+    assert statement["Action"] == "sts:AssumeRole"
+    assert INFISICAL_US_ACCOUNT in json.dumps(statement["Principal"])
+    assert statement["Condition"] == {
+        "StringEquals": {"sts:ExternalId": INFISICAL_KESSLER_PROJECT}}
+
+
+def test_infisical_role_may_only_manage_kessler_parameters(app_template):
+    t = app_template()
+    logical_id, _ = _role_by_name(t, "kessler-infisical-sync")
+    policies = [p for p in t.find_resources("AWS::IAM::Policy").values()
+                if {"Ref": logical_id} in p["Properties"].get("Roles", [])]
+    (policy,) = policies
+    statements = policy["Properties"]["PolicyDocument"]["Statement"]
+    describe = [s for s in statements if s["Action"] == "ssm:DescribeParameters"]
+    scoped = [s for s in statements if s["Action"] != "ssm:DescribeParameters"]
+    assert len(describe) == 1 and describe[0]["Resource"] == "*"
+    (manage,) = scoped
+    assert set(manage["Action"]) == {
+        "ssm:PutParameter", "ssm:GetParameters", "ssm:GetParametersByPath",
+        "ssm:DeleteParameters", "ssm:ListTagsForResource", "ssm:AddTagsToResource",
+        "ssm:RemoveTagsFromResource"}
+    resources = json.dumps(manage["Resource"])
+    assert ":parameter/kessler\"" in resources and ":parameter/kessler/*" in resources
+    assert "kms" not in json.dumps(statements)
+    t.has_output("InfisicalSyncRoleArn", {})
