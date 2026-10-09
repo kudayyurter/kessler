@@ -12,6 +12,8 @@ uv run uvicorn app.api.main:create_app --factory --port 8000
 cd web && cp .env.example .env.local && npm install && npm run dev
 ```
 
+With access to the `kessler` Infisical project, skip the `cp` and run `infisical run --path=/web -- npm run dev`.
+
 Open http://localhost:3000. The browser only calls `/api/*` on the same origin; `src/app/api/[...path]/route.ts` forwards to `API_ORIGIN_URL`.
 
 ## Layout

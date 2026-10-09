@@ -15,6 +15,10 @@ from constructs import Construct
 
 SSM_PREFIX = "/kessler/"
 REPO_NAME = "kessler-api"
+# Infisical Cloud (US) assumes roles from this account and sends the Infisical project ID as
+# the external ID for project-level connections.
+INFISICAL_CLOUD_US_ACCOUNT = "381492033652"
+INFISICAL_KESSLER_PROJECT = "0a2ef5cf-b1b8-4870-9129-76a61c88e4ff"
 
 
 class KesslerAppStack(Stack):
@@ -105,6 +109,24 @@ class KesslerAppStack(Stack):
             function_name=self.api_fn.function_arn, principal=deploy_role.arn,
             invoked_via_function_url=True,
         )
+
+        # --- Infisical writes the SSM parameters: the kessler project's prod/api folder is the
+        # single place these secrets are edited, and its Parameter Store sync pushes them here. ---
+        infisical_role = iam.Role(
+            self, "InfisicalSyncRole", role_name="kessler-infisical-sync",
+            assumed_by=iam.AccountPrincipal(INFISICAL_CLOUD_US_ACCOUNT),
+            external_ids=[INFISICAL_KESSLER_PROJECT],
+            max_session_duration=Duration.hours(1),
+        )
+        infisical_role.add_to_policy(iam.PolicyStatement(
+            actions=["ssm:PutParameter", "ssm:GetParameters", "ssm:GetParametersByPath",
+                     "ssm:DeleteParameters", "ssm:ListTagsForResource",
+                     "ssm:AddTagsToResource", "ssm:RemoveTagsFromResource"],
+            resources=ssm_read.resources,
+        ))
+        infisical_role.add_to_policy(iam.PolicyStatement(
+            actions=["ssm:DescribeParameters"], resources=["*"],
+        ))
 
         self.jobs_fn = lambda_.DockerImageFunction(
             self, "JobsFunction",
@@ -213,3 +235,4 @@ class KesslerAppStack(Stack):
         CfnOutput(self, "ApiFunctionUrl", value=url.url)
         CfnOutput(self, "SnapshotBucketName", value=self.bucket.bucket_name)
         CfnOutput(self, "VercelApiRoleArn", value=vercel_role.role_arn)
+        CfnOutput(self, "InfisicalSyncRoleArn", value=infisical_role.role_arn)

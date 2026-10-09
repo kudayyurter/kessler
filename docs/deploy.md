@@ -58,6 +58,10 @@ rather than having an assistant run them for you.
 Store secrets in SSM Parameter Store as `SecureString`s under `/kessler/`. Nothing here is ever
 committed to the repo or a CDK template.
 
+> Since 2026-10 these values are edited in Infisical, not with `put-parameter`: see
+> [Secrets in Infisical](#secrets-in-infisical). The commands below are only for a fresh account
+> before the Infisical sync exists.
+
 Shell history keeps whatever you type. In bash, a leading space only skips history when
 `HISTCONTROL` includes `ignorespace` or `ignoreboth` — check first with `echo $HISTCONTROL`.
 If it's not set, either run `set +o history` before this block and `set -o history` after (or
@@ -251,6 +255,25 @@ Visit `https://kessler.kudayyurter.dev` and confirm:
   `cache-control: public, max-age=31536000, immutable`.
 
 ## 11. Operations
+
+### Secrets in Infisical
+
+The Infisical project `kessler` (Infisical Cloud US) is the one place production secrets are
+edited. Two secret syncs copy them out; never edit the copies by hand, because the next sync
+overwrites them.
+
+| Infisical (`prod`) | Sync | Destination | Read by |
+|---|---|---|---|
+| `/api`: `DATABASE_URL`, `SPACETRACK_USER`, `SPACETRACK_PASS` | `kessler-ssm` | SSM `/kessler/*` (us-east-2, `alias/aws/ssm`) | both Lambdas, at cold start |
+| `/web`: `API_ORIGIN_URL`, `AWS_ROLE_ARN` | `kessler-vercel` | Vercel project `kessler`, Production | the proxy, at build and run time |
+
+- Infisical writes SSM by assuming `kessler-infisical-sync` (KesslerApp stack). The role trusts only
+  Infisical Cloud's AWS account with the `kessler` project ID as external ID, and may only touch
+  `/kessler/*`.
+- Changes reach the Lambdas on their next cold start. To apply one right away, rerun the deploy
+  workflow (`gh workflow run deploy.yml`).
+- Vercel only reads env vars when it builds, so redeploy the site after a change to `/web`.
+- Local dev reads `dev` (`/api`, `/web`) with `infisical run`; see the READMEs.
 
 **Rerun a job manually** (e.g. after a failed scheduled ingest):
 
