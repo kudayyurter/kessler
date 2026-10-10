@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-10",
+  "commit": "213c66a0b9ca3f9397f0aad38daf2fc0ae5f9514",
+  "generatedAt": "2026-10-10T12:41:32.506715+00:00",
+  "timeMs": 1791636211000,
+  "snapshotAgeHours": 0.032915,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.04714472611703365,
+      "p95Km": 0.04433792209936052
+    },
+    "DEB": {
+      "n": 161,
+      "maxKm": 0.04503929122095222,
+      "p95Km": 0.0422676376147919
+    },
+    "R/B": {
+      "n": 34,
+      "maxKm": 0.04431458167455446,
+      "p95Km": 0.04431131195345051
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04372988056771361,
+      "p95Km": 0.04372988056771361
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 443,
+      "maxKm": 0.04714472611703365,
+      "p95Km": 0.04387030698467532
+    },
+    "HIGH": {
+      "n": 57,
+      "maxKm": 0.04431458167455446,
+      "p95Km": 0.04383355593055579
+    }
+  },
+  "age": {
+    "p50Days": 0.6359792674085829,
+    "p95Days": 4.002092927407158,
+    "staleShare": 0.068
+  },
+  "iss": {
+    "groundKm": 0.4570383447282326,
+    "altDiffKm": 0.10184743325544332,
+    "theirs": {
+      "latDeg": -4.1373920893229,
+      "lonDeg": -123.99048995486,
+      "altKm": 423.14167586132,
+      "timestamp": 1791636211
+    }
+  },
+  "worst": [
+    {
+      "noradId": 41337,
+      "name": "ASTRO-H (HITOMI)",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7977565974087185,
+      "groundKm": 0.04714472611703365,
+      "altDiffKm": 0.000013961342915536079,
+      "ok": true
+    },
+    {
+      "noradId": 69277,
+      "name": "KUIPER-00592",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4051315974087185,
+      "groundKm": 0.04665467570204506,
+      "altDiffKm": 0.000055302002351709234,
+      "ok": true
+    },
+    {
+      "noradId": 47827,
+      "name": "STARLINK-2413",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8816539474091707,
+      "groundKm": 0.046632897399662906,
+      "altDiffKm": 0.00006824160590213069,
+      "ok": true
+    },
+    {
+      "noradId": 56832,
+      "name": "STARLINK-30128",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1415721774065937,
+      "groundKm": 0.046405159333734285,
+      "altDiffKm": 0.0002732063771873072,
+      "ok": true
+    },
+    {
+      "noradId": 59327,
+      "name": "STARLINK-31599",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7521117974062319,
+      "groundKm": 0.045967272672089526,
+      "altDiffKm": 0.000029773769540497597,
+      "ok": true
+    },
+    {
+      "noradId": 66497,
+      "name": "STARLINK-35899",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6212237074053729,
+      "groundKm": 0.04580250355108171,
+      "altDiffKm": -0.00006083473937223971,
+      "ok": true
+    },
+    {
+      "noradId": 66983,
+      "name": "STARLINK-36145",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9098551274052372,
+      "groundKm": 0.04535896536692236,
+      "altDiffKm": -0.000007966554846916551,
+      "ok": true
+    },
+    {
+      "noradId": 49390,
+      "name": "YAOGAN-35 01A",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.2549421774065936,
+      "groundKm": 0.045315596946728195,
+      "altDiffKm": 0.00008995422655289076,
+      "ok": true
+    },
+    {
+      "noradId": 65358,
+      "name": "STARLINK-34782",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3883477574072944,
+      "groundKm": 0.04506164180512609,
+      "altDiffKm": -0.00019860169470575784,
+      "ok": true
+    },
+    {
+      "noradId": 4635,
+      "name": "COSMOS 375 DEB",
+      "type": "DEB",
+      "regime": "LEO",
+      "ageDays": 0.7330601974091706,
+      "groundKm": 0.04503929122095222,
+      "altDiffKm": 0.00006733172983786062,
+      "ok": true
+    }
+  ]
+}
