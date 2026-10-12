@@ -22,18 +22,22 @@ Kessler puts about 30,000 objects in orbit on a live 3D globe, each placed at it
 
 ## How it works
 
-<img src="https://skillicons.dev/icons?i=nextjs,react,threejs,ts,python,fastapi,postgres,aws,vercel" alt="Next.js, React, Three.js, TypeScript, Python, FastAPI, Postgres, AWS, Vercel">
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
+  <img src="https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white" alt="Three.js">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Postgres-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="Postgres">
+  <img src="https://img.shields.io/badge/AWS_Lambda-FF9900?style=for-the-badge" alt="AWS Lambda">
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel">
+</p>
 
-```mermaid
-flowchart LR
-  src["Space-Track<br/>CelesTrak"] --> jobs["Ingest jobs<br/>(Lambda)"]
-  jobs --> db[("Postgres<br/>(Neon)")]
-  jobs --> s3[("S3<br/>snapshots")]
-  db --> api["FastAPI<br/>(Lambda)"]
-  s3 --> api
-  api -->|SigV4| web["Next.js<br/>(Vercel)"]
-  web --> browser["Browser<br/>SGP4 + WebGL"]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/architecture-dark.svg">
+  <img src=".github/assets/architecture-light.svg" alt="Space-Track and CelesTrak feed Lambda ingest jobs, which write Postgres on Neon and S3 snapshots; FastAPI on Lambda serves them to Next.js on Vercel over SigV4, and the browser runs SGP4 and WebGL." width="880">
+</picture>
 
 - **Consistent snapshots:** each catalog ingest publishes an immutable snapshot generation, so a page's positions and names always come from the same data.
 - **Checked accuracy:** CI tests every step from snapshot to SGP4 to globe against an independent Python reference. A daily capture and a weekly review also compare the live site against that reference and the ISS's reported position ([details](web/README.md#accuracy)).
