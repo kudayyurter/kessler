@@ -40,9 +40,13 @@ jobs:
           else
             git worktree add --orphan -b audit-log "$RUNNER_TEMP/log"
           fi
-          mkdir -p "$RUNNER_TEMP/log/audit/daily"
+          mkdir -p "$RUNNER_TEMP/log/audit/daily" "$RUNNER_TEMP/log/web"
           cp "$RUNNER_TEMP/today.json" "$RUNNER_TEMP/log/audit/daily/$DAY.json"
+          # The Vercel project builds from web/, which this branch lacks; without
+          # this opt-out every push here is a failed preview deployment.
+          [ -f "$RUNNER_TEMP/log/web/vercel.json" ] || \
+            printf '{\n  "$schema": "https://openapi.vercel.sh/vercel.json",\n  "git": { "deploymentEnabled": false }\n}\n' > "$RUNNER_TEMP/log/web/vercel.json"
           cd "$RUNNER_TEMP/log"
-          git add audit
+          git add audit web
           git commit -m "audit: daily capture $DAY" || echo "nothing to commit"
           git push origin audit-log
