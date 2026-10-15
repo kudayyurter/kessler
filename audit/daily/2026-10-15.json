@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-15",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-10-15T06:41:32.021894+00:00",
+  "timeMs": 1792064568000,
+  "snapshotAgeHours": 5.021105277777778,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.04685024913835943,
+      "p95Km": 0.044907211646900515
+    },
+    "DEB": {
+      "n": 161,
+      "maxKm": 0.04720203235703275,
+      "p95Km": 0.04270374675952191
+    },
+    "R/B": {
+      "n": 34,
+      "maxKm": 0.04570405185190603,
+      "p95Km": 0.04452716847193355
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04447467936327204,
+      "p95Km": 0.04447467936327204
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 429,
+      "maxKm": 0.04720203235703275,
+      "p95Km": 0.04444076483873972
+    },
+    "HIGH": {
+      "n": 71,
+      "maxKm": 0.04570405185190603,
+      "p95Km": 0.04310694839630201
+    }
+  },
+  "age": {
+    "p50Days": 1.1401026055540862,
+    "p95Days": 4.377912495555171,
+    "staleShare": 0.07
+  },
+  "iss": {
+    "groundKm": 1.0544624056891696,
+    "altDiffKm": 0.01715134087066872,
+    "theirs": {
+      "latDeg": -44.399935269339,
+      "lonDeg": 174.60155450245,
+      "altKm": 430.93700418705,
+      "timestamp": 1792064568
+    }
+  },
+  "worst": [
+    {
+      "noradId": 1684,
+      "name": "TITAN 3C TRANSTAGE DEB",
+      "type": "DEB",
+      "regime": "LEO",
+      "ageDays": 1.0066716555560076,
+      "groundKm": 0.04720203235703275,
+      "altDiffKm": -0.0003796178674519979,
+      "ok": true
+    },
+    {
+      "noradId": 64065,
+      "name": "STARLINK-11709 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9560581255566633,
+      "groundKm": 0.04685024913835943,
+      "altDiffKm": 0.000041242571910515835,
+      "ok": true
+    },
+    {
+      "noradId": 66299,
+      "name": "FGN-100-D2",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3795548855562563,
+      "groundKm": 0.0465903737929326,
+      "altDiffKm": -0.00019823425060394584,
+      "ok": true
+    },
+    {
+      "noradId": 65507,
+      "name": "STARLINK-35163",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0748109155556007,
+      "groundKm": 0.04617402877864477,
+      "altDiffKm": 0.00002913810658355942,
+      "ok": true
+    },
+    {
+      "noradId": 64329,
+      "name": "STARLINK-11734 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1727617955553973,
+      "groundKm": 0.04612393418285114,
+      "altDiffKm": 0.00006074207840356394,
+      "ok": true
+    },
+    {
+      "noradId": 57650,
+      "name": "STARLINK-30299",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1736386355562562,
+      "groundKm": 0.04606467266128843,
+      "altDiffKm": -0.00005188369556208272,
+      "ok": true
+    },
+    {
+      "noradId": 52678,
+      "name": "STARLINK-4074",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3361153255575675,
+      "groundKm": 0.04588734676860386,
+      "altDiffKm": 0.0001312930607468843,
+      "ok": true
+    },
+    {
+      "noradId": 65361,
+      "name": "STARLINK-34800",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9106195155560529,
+      "groundKm": 0.04581804382785442,
+      "altDiffKm": -6.051295144970936e-7,
+      "ok": true
+    },
+    {
+      "noradId": 52686,
+      "name": "STARLINK-4005",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9137396655556008,
+      "groundKm": 0.04578258245998181,
+      "altDiffKm": -0.000023010003872059315,
+      "ok": true
+    },
+    {
+      "noradId": 51985,
+      "name": "STARLINK-3651",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2096266555560076,
+      "groundKm": 0.04575767532712635,
+      "altDiffKm": 0.00006399276514912344,
+      "ok": true
+    }
+  ]
+}
