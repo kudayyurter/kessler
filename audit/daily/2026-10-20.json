@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-20",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-10-20T06:41:32.126269+00:00",
+  "timeMs": 1792497044000,
+  "snapshotAgeHours": 5.153298333333334,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.046777334737470776,
+      "p95Km": 0.04433643309759212
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04523520713085487,
+      "p95Km": 0.04310653662035841
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04574392521049304,
+      "p95Km": 0.04293438479465043
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04257494704856399,
+      "p95Km": 0.04257494704856399
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 432,
+      "maxKm": 0.046777334737470776,
+      "p95Km": 0.043923158044237846
+    },
+    "HIGH": {
+      "n": 68,
+      "maxKm": 0.04353051903313248,
+      "p95Km": 0.04303428308604376
+    }
+  },
+  "age": {
+    "p50Days": 0.7877936248157642,
+    "p95Days": 3.3458161948140464,
+    "staleShare": 0.06
+  },
+  "iss": {
+    "groundKm": 0.0018314899538304141,
+    "altDiffKm": 0.0020763077587275802,
+    "theirs": {
+      "latDeg": 25.525591078637,
+      "lonDeg": -8.7183126483122,
+      "altKm": 424.1972336831,
+      "timestamp": 1792497044
+    }
+  },
+  "worst": [
+    {
+      "noradId": 61015,
+      "name": "GEESAT-3 05",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5379720148128934,
+      "groundKm": 0.046777334737470776,
+      "altDiffKm": -0.0002827732267860483,
+      "ok": true
+    },
+    {
+      "noradId": 63283,
+      "name": "STARLINK-33669",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1463492148137975,
+      "groundKm": 0.04673299085947997,
+      "altDiffKm": 0.00018347375407756772,
+      "ok": true
+    },
+    {
+      "noradId": 58707,
+      "name": "STARLINK-11077 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5745707648128934,
+      "groundKm": 0.04666660072850785,
+      "altDiffKm": 0.00005350890404542952,
+      "ok": true
+    },
+    {
+      "noradId": 64742,
+      "name": "STARLINK-34607",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3034599548142045,
+      "groundKm": 0.04651003476736688,
+      "altDiffKm": -0.00006792085861206942,
+      "ok": true
+    },
+    {
+      "noradId": 69841,
+      "name": "STARLINK-37433",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.268372824814408,
+      "groundKm": 0.04643664376630696,
+      "altDiffKm": -0.000050753990308294306,
+      "ok": true
+    },
+    {
+      "noradId": 65132,
+      "name": "KUIPER-00081",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2478747348163746,
+      "groundKm": 0.046403853633946855,
+      "altDiffKm": -0.00016575167376231548,
+      "ok": true
+    },
+    {
+      "noradId": 47,
+      "name": "THOR ABLESTAR R/B",
+      "type": "R/B",
+      "regime": "LEO",
+      "ageDays": 0.6922065048133003,
+      "groundKm": 0.04574392521049304,
+      "altDiffKm": 0.00009500530109107785,
+      "ok": true
+    },
+    {
+      "noradId": 61865,
+      "name": "STARLINK-32401",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1162998048174824,
+      "groundKm": 0.04564319376070076,
+      "altDiffKm": -0.00009142599975575649,
+      "ok": true
+    },
+    {
+      "noradId": 18551,
+      "name": "COSMOS 249 DEB",
+      "type": "DEB",
+      "regime": "LEO",
+      "ageDays": 1.6533300248153122,
+      "groundKm": 0.04523520713085487,
+      "altDiffKm": 0.00018291618835064583,
+      "ok": true
+    },
+    {
+      "noradId": 69957,
+      "name": "STARLINK-37919",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3686702248156513,
+      "groundKm": 0.04515684605732355,
+      "altDiffKm": -0.00031726037155976883,
+      "ok": true
+    }
+  ]
+}
