@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-25",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-10-25T06:41:32.378715+00:00",
+  "timeMs": 1792928737000,
+  "snapshotAgeHours": 5.067950555555556,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.045930855596123914,
+      "p95Km": 0.043923934128018226
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04309388452985839,
+      "p95Km": 0.04138673755360035
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.0467773209340416,
+      "p95Km": 0.04600493429324595
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.04125574726840821,
+      "p95Km": 0.04125574726840821
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 431,
+      "maxKm": 0.045930855596123914,
+      "p95Km": 0.04309388452985839
+    },
+    "HIGH": {
+      "n": 69,
+      "maxKm": 0.0467773209340416,
+      "p95Km": 0.04482971492585026
+    }
+  },
+  "age": {
+    "p50Days": 1.364570364074707,
+    "p95Days": 3.812105864074142,
+    "staleShare": 0.072
+  },
+  "iss": {
+    "groundKm": 0.0016816275856487393,
+    "altDiffKm": 0.0023086866630706027,
+    "theirs": {
+      "latDeg": -38.667894497115,
+      "lonDeg": 125.94971607731,
+      "altKm": 427.27552066531,
+      "timestamp": 1792928737
+    }
+  },
+  "worst": [
+    {
+      "noradId": 13007,
+      "name": "ATLAS CENTAUR R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 1.5208343640730115,
+      "groundKm": 0.0467773209340416,
+      "altDiffKm": 0.0006649319907410245,
+      "ok": true
+    },
+    {
+      "noradId": 40273,
+      "name": "ARIANE 5 R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 1.2055689240745262,
+      "groundKm": 0.04600493429324595,
+      "altDiffKm": 0.003484026440673915,
+      "ok": true
+    },
+    {
+      "noradId": 56542,
+      "name": "STARLINK-6266",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2087807540724012,
+      "groundKm": 0.045930855596123914,
+      "altDiffKm": 0.00003893969255841512,
+      "ok": true
+    },
+    {
+      "noradId": 59854,
+      "name": "STARLINK-31891",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.4056261140752722,
+      "groundKm": 0.045431146308651235,
+      "altDiffKm": 0.0001629293526548281,
+      "ok": true
+    },
+    {
+      "noradId": 43563,
+      "name": "FALCON 9 R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 1.2198317940747296,
+      "groundKm": 0.04541226915719796,
+      "altDiffKm": -0.0022704851348862576,
+      "ok": true
+    },
+    {
+      "noradId": 65971,
+      "name": "STRIX-5",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2268441240748653,
+      "groundKm": 0.045020116735266354,
+      "altDiffKm": 0.00010454068262788496,
+      "ok": true
+    },
+    {
+      "noradId": 33751,
+      "name": "SPIRALE A",
+      "type": "PAY",
+      "regime": "HIGH",
+      "ageDays": 2.595390674073961,
+      "groundKm": 0.04482971492585026,
+      "altDiffKm": -0.0026680969908738916,
+      "ok": true
+    },
+    {
+      "noradId": 64082,
+      "name": "STARLINK-34171",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.280003484073215,
+      "groundKm": 0.0447416084348851,
+      "altDiffKm": 0.00010288325671581333,
+      "ok": true
+    },
+    {
+      "noradId": 60453,
+      "name": "LEGION 4",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1908121540719492,
+      "groundKm": 0.044473956694205584,
+      "altDiffKm": -0.000013870336033505737,
+      "ok": true
+    },
+    {
+      "noradId": 69513,
+      "name": "STARLINK-37552",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.8247649340735541,
+      "groundKm": 0.044425744129070244,
+      "altDiffKm": -0.0000585685936016489,
+      "ok": true
+    }
+  ]
+}
