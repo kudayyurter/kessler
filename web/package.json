@@ -22,7 +22,7 @@
     "aws4fetch": "^1.0.20",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
-    "next": "^16.3.6",
+    "next": "^16.4.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "satellite.js": "^7.1.0",
@@ -42,11 +42,16 @@
     "@types/three": "^0.186.0",
     "@types/topojson-client": "^3.1.5",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.6",
+    "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "~5.9",
     "vitest": "^5.0.1",
     "world-atlas": "^2.0.2"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   }
 }
