@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-30",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-10-30T12:41:32.323440+00:00",
+  "timeMs": 1793365873000,
+  "snapshotAgeHours": 0.4946325,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.045950404369673736,
+      "p95Km": 0.04489367978842546
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04177467860973265,
+      "p95Km": 0.0411127284093046
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04687170036704333,
+      "p95Km": 0.04333121099273527
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.042177113120629085,
+      "p95Km": 0.042177113120629085
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 428,
+      "maxKm": 0.04687170036704333,
+      "p95Km": 0.04457884687877147
+    },
+    "HIGH": {
+      "n": 72,
+      "maxKm": 0.04165848292230456,
+      "p95Km": 0.04152539925399292
+    }
+  },
+  "age": {
+    "p50Days": 1.0232217285184506,
+    "p95Days": 3.421217288518835,
+    "staleShare": 0.086
+  },
+  "iss": {
+    "groundKm": 0.0020439939833160493,
+    "altDiffKm": 0.0015003969908775616,
+    "theirs": {
+      "latDeg": 50.431920107306,
+      "lonDeg": -138.72803164574,
+      "altKm": 428.34779215917,
+      "timestamp": 1793365873
+    }
+  },
+  "worst": [
+    {
+      "noradId": 65234,
+      "name": "CZ-4C R/B",
+      "type": "R/B",
+      "regime": "LEO",
+      "ageDays": 0.8092068985183151,
+      "groundKm": 0.04687170036704333,
+      "altDiffKm": -0.000028768809670509654,
+      "ok": true
+    },
+    {
+      "noradId": 59682,
+      "name": "STARLINK-32108",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7160995385177047,
+      "groundKm": 0.045950404369673736,
+      "altDiffKm": 0.00003273892207289464,
+      "ok": true
+    },
+    {
+      "noradId": 57889,
+      "name": "YAOGAN-39 02B",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7539428485192193,
+      "groundKm": 0.04594373503579246,
+      "altDiffKm": 0.00014782122752876603,
+      "ok": true
+    },
+    {
+      "noradId": 63588,
+      "name": "STARLINK-33651",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.049398148518315,
+      "groundKm": 0.04592194238857836,
+      "altDiffKm": -0.00018716958419418006,
+      "ok": true
+    },
+    {
+      "noradId": 63071,
+      "name": "STARLINK-33624",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2664267485187672,
+      "groundKm": 0.045854452101874776,
+      "altDiffKm": 0.00003309987130251102,
+      "ok": true
+    },
+    {
+      "noradId": 58178,
+      "name": "STARLINK-30810",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7160995385177047,
+      "groundKm": 0.04573379362394853,
+      "altDiffKm": -0.00030248501394680716,
+      "ok": true
+    },
+    {
+      "noradId": 59893,
+      "name": "STARLINK-31963",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.049398148518315,
+      "groundKm": 0.0456981056919995,
+      "altDiffKm": -0.00014705595333452948,
+      "ok": true
+    },
+    {
+      "noradId": 58206,
+      "name": "STARLINK-30800",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7160995385177047,
+      "groundKm": 0.04568735588830085,
+      "altDiffKm": -0.00012544671869818558,
+      "ok": true
+    },
+    {
+      "noradId": 61532,
+      "name": "STARLINK-11354 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.049398148518315,
+      "groundKm": 0.04564438485039098,
+      "altDiffKm": 0.0002827532572382552,
+      "ok": true
+    },
+    {
+      "noradId": 59467,
+      "name": "STARLINK-31592",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7160995385177047,
+      "groundKm": 0.04562082775085934,
+      "altDiffKm": 0.00014533904879954207,
+      "ok": true
+    }
+  ]
+}
