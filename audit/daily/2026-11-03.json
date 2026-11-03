@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-03",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-03T12:41:32.535147+00:00",
+  "timeMs": 1793716135000,
+  "snapshotAgeHours": 1.7895736111111111,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 295,
+      "maxKm": 0.04501462654737719,
+      "p95Km": 0.0426319315495738
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.042430489675711044,
+      "p95Km": 0.04117755600884965
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04285492545592804,
+      "p95Km": 0.041631569458180376
+    },
+    "UNK": {
+      "n": 10,
+      "maxKm": 0.040922161285034044,
+      "p95Km": 0.040922161285034044
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 436,
+      "maxKm": 0.04501462654737719,
+      "p95Km": 0.04227766032815194
+    },
+    "HIGH": {
+      "n": 64,
+      "maxKm": 0.04125704663832115,
+      "p95Km": 0.04117755600884965
+    }
+  },
+  "age": {
+    "p50Days": 0.8782648518512867,
+    "p95Days": 2.451392981852779,
+    "staleShare": 0.04
+  },
+  "iss": {
+    "groundKm": 0.001286039246265682,
+    "altDiffKm": 0.0018861360503024116,
+    "theirs": {
+      "latDeg": 33.573583909812,
+      "lonDeg": 101.59670154992,
+      "altKm": 418.95662734525,
+      "timestamp": 1793716135
+    }
+  },
+  "worst": [
+    {
+      "noradId": 52283,
+      "name": "STARLINK-3789",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8491508218496817,
+      "groundKm": 0.04501462654737719,
+      "altDiffKm": 0.0000293314782879861,
+      "ok": true
+    },
+    {
+      "noradId": 62136,
+      "name": "STARLINK-32554",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.936724551852191,
+      "groundKm": 0.04470546254311441,
+      "altDiffKm": 0.00011387314248167968,
+      "ok": true
+    },
+    {
+      "noradId": 65144,
+      "name": "KUIPER-00106",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.270057871851038,
+      "groundKm": 0.044705460622628576,
+      "altDiffKm": 0.00021585545164271025,
+      "ok": true
+    },
+    {
+      "noradId": 65150,
+      "name": "KUIPER-00112",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.270057871851038,
+      "groundKm": 0.044092102593689605,
+      "altDiffKm": 0.00006056615120542119,
+      "ok": true
+    },
+    {
+      "noradId": 57234,
+      "name": "STARLINK-6368",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8128466218510381,
+      "groundKm": 0.04406810468328012,
+      "altDiffKm": -0.000009251925916942128,
+      "ok": true
+    },
+    {
+      "noradId": 68189,
+      "name": "STARLINK-36305",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1033796418507893,
+      "groundKm": 0.04403637380279793,
+      "altDiffKm": -0.0000033510967796246405,
+      "ok": true
+    },
+    {
+      "noradId": 67873,
+      "name": "STARLINK-36783",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1033796418507893,
+      "groundKm": 0.043612657760569176,
+      "altDiffKm": 0.00011423400445664811,
+      "ok": true
+    },
+    {
+      "noradId": 64611,
+      "name": "STARLINK-34494",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1867245418520327,
+      "groundKm": 0.043405997626210474,
+      "altDiffKm": 0.00017505038925946792,
+      "ok": true
+    },
+    {
+      "noradId": 69588,
+      "name": "CENTISPACE-1 GROUP 05 OBJECT G",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7990075818521005,
+      "groundKm": 0.04339105421902669,
+      "altDiffKm": 0.00010675664998416323,
+      "ok": true
+    },
+    {
+      "noradId": 67865,
+      "name": "STARLINK-36738",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1033796418507893,
+      "groundKm": 0.043347174286623526,
+      "altDiffKm": -0.00014250092783640866,
+      "ok": true
+    }
+  ]
+}
