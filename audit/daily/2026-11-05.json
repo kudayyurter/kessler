@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-05",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-05T12:41:32.480710+00:00",
+  "timeMs": 1793890057000,
+  "snapshotAgeHours": 2.1012555555555554,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.046362184470833026,
+      "p95Km": 0.041749990021490525
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.044607761291863675,
+      "p95Km": 0.040868129544429116
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04574760537493421,
+      "p95Km": 0.041679014859730315
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.039188863460703674,
+      "p95Km": 0.039188863460703674
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 439,
+      "maxKm": 0.046362184470833026,
+      "p95Km": 0.04155279014079339
+    },
+    "HIGH": {
+      "n": 61,
+      "maxKm": 0.04574760537493421,
+      "p95Km": 0.040731562527273425
+    }
+  },
+  "age": {
+    "p50Days": 0.9114399029625787,
+    "p95Days": 2.5643367629637543,
+    "staleShare": 0.038
+  },
+  "iss": {
+    "groundKm": 0.006914327572594785,
+    "altDiffKm": 0.0018892519167934552,
+    "theirs": {
+      "latDeg": 43.642007805503,
+      "lonDeg": -175.18469533274,
+      "altKm": 426.27425219966,
+      "timestamp": 1793890057
+    }
+  },
+  "worst": [
+    {
+      "noradId": 35578,
+      "name": "RAZAKSAT",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.430797222962556,
+      "groundKm": 0.046362184470833026,
+      "altDiffKm": 0.0000670863382765674,
+      "ok": true
+    },
+    {
+      "noradId": 20316,
+      "name": "ARIANE 44L R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 0.8512031029623526,
+      "groundKm": 0.04574760537493421,
+      "altDiffKm": 0.0022228000241284462,
+      "ok": true
+    },
+    {
+      "noradId": 63902,
+      "name": "STARLINK-33955",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0144296429641158,
+      "groundKm": 0.044766501680055845,
+      "altDiffKm": 0.00002020421732140676,
+      "ok": true
+    },
+    {
+      "noradId": 32499,
+      "name": "BREEZE-M DEB",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 26.283708762961492,
+      "groundKm": 0.044607761291863675,
+      "altDiffKm": -0.0012078177599050832,
+      "ok": true
+    },
+    {
+      "noradId": 48452,
+      "name": "STARLINK-2703",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7801674429632116,
+      "groundKm": 0.04425410038181407,
+      "altDiffKm": -0.00006338087013091354,
+      "ok": true
+    },
+    {
+      "noradId": 66895,
+      "name": "STARLINK-35971",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0330439829621492,
+      "groundKm": 0.04383395366615531,
+      "altDiffKm": -0.00003713873201149909,
+      "ok": true
+    },
+    {
+      "noradId": 100973,
+      "name": "HULIANWANG DIGUI-214",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7606011929632116,
+      "groundKm": 0.04375677307123476,
+      "altDiffKm": -0.00003180615181008761,
+      "ok": true
+    },
+    {
+      "noradId": 67928,
+      "name": "STARLINK-36771",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0330439829621492,
+      "groundKm": 0.04343577203264881,
+      "altDiffKm": 0.00022009742497175466,
+      "ok": true
+    },
+    {
+      "noradId": 61198,
+      "name": "TIANQI-32",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7120402229619909,
+      "groundKm": 0.043246127498200344,
+      "altDiffKm": 0.00013708638141451956,
+      "ok": true
+    },
+    {
+      "noradId": 39100,
+      "name": "DELTA 1 DEB",
+      "type": "DEB",
+      "regime": "LEO",
+      "ageDays": 1.537783242964568,
+      "groundKm": 0.04278532997203722,
+      "altDiffKm": 0.0001304433176301245,
+      "ok": true
+    }
+  ]
+}
