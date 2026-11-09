@@ -1,14 +1,14 @@
 # Position accuracy
 
-## Week of 2026-10-26 — ✅ PASS
+## Week of 2026-11-02 — ✅ PASS
 
 | Check | Value | Limit | Result |
 |---|---|---|---|
-| Math error (ground), weekly max | 0.047 km | 1 | PASS |
+| Math error (ground), weekly max | 0.046 km | 1 | PASS |
 | Site-only failures, share of sampled, weekly max | 0.00% | 0.005 | PASS |
-| ISS ground distance, weekly max | 0.955 km | 25 | PASS |
-| ISS altitude difference, weekly max | 0.051 km | 10 | PASS |
-| Snapshot age at capture (h), weekly max | 5.7 h | 12 | PASS |
+| ISS ground distance, weekly max | 0.958 km | 25 | PASS |
+| ISS altitude difference, weekly max | 0.026 km | 10 | PASS |
+| Snapshot age at capture (h), weekly max | 3.6 h | 12 | PASS |
 | Daily captures present | 7 of 7 | 4 | PASS |
 
 Missing days: none
@@ -17,13 +17,13 @@ Missing days: none
 
 | Date | Snapshot age (h) | Sampled | Failures site / reference / both | Element age p50 / p95 (d) | Element age > 3 d |
 |---|---|---|---|---|---|
-| 2026-10-26 | 0.6 | 500 | 0 / 0 / 0 | 0.47 / 3.08 | 5.2% |
-| 2026-10-27 | 5.7 | 500 | 0 / 0 / 0 | 0.75 / 3.26 | 5.8% |
-| 2026-10-28 | 0.5 | 500 | 0 / 0 / 0 | 0.87 / 3.23 | 5.6% |
-| 2026-10-29 | 0.6 | 500 | 0 / 0 / 0 | 0.91 / 3.48 | 6.2% |
-| 2026-10-30 | 0.5 | 500 | 0 / 0 / 0 | 1.02 / 3.42 | 8.6% |
-| 2026-10-31 | 0.1 | 500 | 0 / 0 / 0 | 0.55 / 3.29 | 5.8% |
-| 2026-11-01 | 0.9 | 500 | 0 / 0 / 0 | 0.44 / 3.51 | 6.4% |
+| 2026-11-02 | 3.6 | 500 | 0 / 0 / 0 | 0.71 / 2.83 | 4.6% |
+| 2026-11-03 | 1.8 | 500 | 0 / 0 / 0 | 0.88 / 2.45 | 4.0% |
+| 2026-11-04 | 2.0 | 500 | 0 / 0 / 0 | 0.67 / 2.67 | 4.4% |
+| 2026-11-05 | 2.1 | 500 | 0 / 0 / 0 | 0.91 / 2.56 | 3.8% |
+| 2026-11-06 | 1.7 | 500 | 0 / 0 / 0 | 1.08 / 2.90 | 4.8% |
+| 2026-11-07 | 0.6 | 500 | 0 / 0 / 0 | 0.43 / 2.57 | 3.8% |
+| 2026-11-08 | 1.0 | 500 | 0 / 0 / 0 | 0.43 / 2.08 | 3.6% |
 
 Element age measures Space-Track's tracking cadence, not the site's freshness, so it is not a check.
 
@@ -31,16 +31,16 @@ Element age measures Space-Track's tracking cadence, not the site's freshness, s
 
 | NORAD ID | Name | Type | Regime | Ground (km) | Δalt (km) |
 |---|---|---|---|---|---|
-| 41166 | VELOX-CI | PAY | LEO | 0.047 | -0.000 |
-| 65234 | CZ-4C R/B | R/B | LEO | 0.047 | -0.000 |
-| 44341 | OTB | PAY | LEO | 0.047 | 0.000 |
-| 59682 | STARLINK-32108 | PAY | LEO | 0.046 | 0.000 |
-| 57889 | YAOGAN-39 02B | PAY | LEO | 0.046 | 0.000 |
-| 63588 | STARLINK-33651 | PAY | LEO | 0.046 | -0.000 |
-| 63071 | STARLINK-33624 | PAY | LEO | 0.046 | 0.000 |
-| 67447 | STARLINK-36440 | PAY | LEO | 0.046 | 0.000 |
-| 58178 | STARLINK-30810 | PAY | LEO | 0.046 | -0.000 |
-| 59893 | STARLINK-31963 | PAY | LEO | 0.046 | -0.000 |
+| 35578 | RAZAKSAT | PAY | LEO | 0.046 | 0.000 |
+| 53526 | YAOGAN-35 04C | PAY | LEO | 0.046 | 0.000 |
+| 20316 | ARIANE 44L R/B | R/B | HIGH | 0.046 | 0.002 |
+| 61852 | STARLINK-32433 | PAY | LEO | 0.045 | -0.000 |
+| 67311 | STARLINK-36495 | PAY | LEO | 0.045 | 0.000 |
+| 62845 | STARLINK-32807 | PAY | LEO | 0.045 | 0.000 |
+| 52283 | STARLINK-3789 | PAY | LEO | 0.045 | 0.000 |
+| 68349 | STARLINK-37183 | PAY | LEO | 0.045 | -0.000 |
+| 63969 | STARLINK-34112 | PAY | LEO | 0.045 | -0.000 |
+| 69833 | STARLINK-37624 | PAY | LEO | 0.045 | 0.000 |
 
 ## 12-week trend
 
@@ -52,3 +52,4 @@ Element age measures Space-Track's tracking cadence, not the site's freshness, s
 | 2026-10-12 | PASS | 0.048 | 1.054 |
 | 2026-10-19 | PASS | 0.049 | 2.040 |
 | 2026-10-26 | PASS | 0.047 | 0.955 |
+| 2026-11-02 | PASS | 0.046 | 0.958 |
