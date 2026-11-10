@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-10",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-10T12:41:32.278554+00:00",
+  "timeMs": 1794322953000,
+  "snapshotAgeHours": 2.3502005555555554,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.04596151128523108,
+      "p95Km": 0.04289255332570439
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04372986505413802,
+      "p95Km": 0.040068493807747727
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.045987831797825576,
+      "p95Km": 0.04094389022222731
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.03905131060106532,
+      "p95Km": 0.03905131060106532
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 441,
+      "maxKm": 0.04596151128523108,
+      "p95Km": 0.04218384752439382
+    },
+    "HIGH": {
+      "n": 59,
+      "maxKm": 0.045987831797825576,
+      "p95Km": 0.04130523311072273
+    }
+  },
+  "age": {
+    "p50Days": 0.5552411733358877,
+    "p95Days": 2.5121248033339887,
+    "staleShare": 0.042
+  },
+  "iss": {
+    "groundKm": 1.014908414297334,
+    "altDiffKm": 0.01232497680484812,
+    "theirs": {
+      "latDeg": 0.95247060839368,
+      "lonDeg": 20.753084594174,
+      "altKm": 414.51966301628,
+      "timestamp": 1794322953
+    }
+  },
+  "worst": [
+    {
+      "noradId": 37607,
+      "name": "ARIANE 5 R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 13.912793753331503,
+      "groundKm": 0.045987831797825576,
+      "altDiffKm": -0.00007842588985340626,
+      "ok": true
+    },
+    {
+      "noradId": 52935,
+      "name": "DS-EO",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6090950233318188,
+      "groundKm": 0.04596151128523108,
+      "altDiffKm": 0.0002572718633473414,
+      "ok": true
+    },
+    {
+      "noradId": 56308,
+      "name": "POEM-2",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5403240533334237,
+      "groundKm": 0.0448008191604738,
+      "altDiffKm": 0.00019585947768518963,
+      "ok": true
+    },
+    {
+      "noradId": 64497,
+      "name": "STARLINK-34363",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6196944333337855,
+      "groundKm": 0.04398130069153416,
+      "altDiffKm": -0.000030889155993918394,
+      "ok": true
+    },
+    {
+      "noradId": 42751,
+      "name": "BREEZE-M DEB [TANK]",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 1.410050823333175,
+      "groundKm": 0.04372986505413802,
+      "altDiffKm": 0.0002482648091017836,
+      "ok": true
+    },
+    {
+      "noradId": 51866,
+      "name": "STARLINK-3553",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.304040313333582,
+      "groundKm": 0.04359282887824913,
+      "altDiffKm": -0.000028000222641821892,
+      "ok": true
+    },
+    {
+      "noradId": 44314,
+      "name": "TIANQI-3",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3916501633312084,
+      "groundKm": 0.04355433634632334,
+      "altDiffKm": -0.00011644466172811008,
+      "ok": true
+    },
+    {
+      "noradId": 60462,
+      "name": "YAOGAN-43 01E",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.2981392733340793,
+      "groundKm": 0.043511981297333885,
+      "altDiffKm": -0.000007974117522735469,
+      "ok": true
+    },
+    {
+      "noradId": 64615,
+      "name": "STARLINK-34469",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.45843818333378544,
+      "groundKm": 0.043468374853673886,
+      "altDiffKm": -0.00007410290032794364,
+      "ok": true
+    },
+    {
+      "noradId": 67956,
+      "name": "STARLINK-36918",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7934143533325195,
+      "groundKm": 0.04343288565386096,
+      "altDiffKm": 0.0000025010459125951456,
+      "ok": true
+    }
+  ]
+}
