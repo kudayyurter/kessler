@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-12",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-12T12:41:32.816832+00:00",
+  "timeMs": 1794497189000,
+  "snapshotAgeHours": 2.74894,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.04501616890338454,
+      "p95Km": 0.042398608080142196
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04309680648575777,
+      "p95Km": 0.03994322517945829
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04114084575706292,
+      "p95Km": 0.04088337146278901
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.03933065253616201,
+      "p95Km": 0.03933065253616201
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 441,
+      "maxKm": 0.04501616890338454,
+      "p95Km": 0.041845281556163516
+    },
+    "HIGH": {
+      "n": 59,
+      "maxKm": 0.04309680648575777,
+      "p95Km": 0.04055981979702083
+    }
+  },
+  "age": {
+    "p50Days": 0.5226054937037715,
+    "p95Days": 2.0940626037032515,
+    "staleShare": 0.028
+  },
+  "iss": {
+    "groundKm": 0.37236351808179147,
+    "altDiffKm": 0.007037959840715757,
+    "theirs": {
+      "latDeg": 51.304790297315,
+      "lonDeg": 102.68178464747,
+      "altKm": 423.62349178218,
+      "timestamp": 1794497189
+    }
+  },
+  "worst": [
+    {
+      "noradId": 63552,
+      "name": "STARLINK-11685 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6433333337035002,
+      "groundKm": 0.04501616890338454,
+      "altDiffKm": -0.00017739738120781112,
+      "ok": true
+    },
+    {
+      "noradId": 62151,
+      "name": "STARLINK-32644",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5554961937035454,
+      "groundKm": 0.0446133345226829,
+      "altDiffKm": 0.0002790771408172077,
+      "ok": true
+    },
+    {
+      "noradId": 56702,
+      "name": "STARLINK-30117",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6192136237024378,
+      "groundKm": 0.04454517336528407,
+      "altDiffKm": -0.00009303816329975234,
+      "ok": true
+    },
+    {
+      "noradId": 44343,
+      "name": "FORMOSAT 7-3",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4684772937039976,
+      "groundKm": 0.044194918019435106,
+      "altDiffKm": 0.0003197979389142347,
+      "ok": true
+    },
+    {
+      "noradId": 58413,
+      "name": "STARLINK-30931",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5552085437039975,
+      "groundKm": 0.044173324990368024,
+      "altDiffKm": 0.00001377090563892125,
+      "ok": true
+    },
+    {
+      "noradId": 54802,
+      "name": "STARLINK-5426",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4240248737052635,
+      "groundKm": 0.0440400423563194,
+      "altDiffKm": -0.00002679607541722362,
+      "ok": true
+    },
+    {
+      "noradId": 62384,
+      "name": "ICEYE-X49",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4317950937030933,
+      "groundKm": 0.04387487095878985,
+      "altDiffKm": 0.00007853557883663598,
+      "ok": true
+    },
+    {
+      "noradId": 54792,
+      "name": "STARLINK-5431",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.39366958370350025,
+      "groundKm": 0.043535756432293765,
+      "altDiffKm": -0.0001367431837024924,
+      "ok": true
+    },
+    {
+      "noradId": 60281,
+      "name": "STARLINK-32038",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8482103837020308,
+      "groundKm": 0.04353058905753187,
+      "altDiffKm": 0.00012110382522223517,
+      "ok": true
+    },
+    {
+      "noradId": 47825,
+      "name": "STARLINK-2410",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6152544237037941,
+      "groundKm": 0.043177238508446514,
+      "altDiffKm": -0.00003719223485632028,
+      "ok": true
+    }
+  ]
+}
