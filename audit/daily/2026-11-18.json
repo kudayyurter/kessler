@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-18",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-18T12:41:32.354389+00:00",
+  "timeMs": 1795017022000,
+  "snapshotAgeHours": 3.147123888888889,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.04538260819051674,
+      "p95Km": 0.0427998026728014
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04455023792827236,
+      "p95Km": 0.041305230318532164
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04713406846833316,
+      "p95Km": 0.0425814258681903
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.040214616494645486,
+      "p95Km": 0.040214616494645486
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 423,
+      "maxKm": 0.04713406846833316,
+      "p95Km": 0.04248180738874096
+    },
+    "HIGH": {
+      "n": 77,
+      "maxKm": 0.04455023792827236,
+      "p95Km": 0.04108169241161687
+    }
+  },
+  "age": {
+    "p50Days": 0.6557875118509928,
+    "p95Days": 2.4305701618533666,
+    "staleShare": 0.032
+  },
+  "iss": {
+    "groundKm": 0.4740677750336787,
+    "altDiffKm": -0.0048043851482475475,
+    "theirs": {
+      "latDeg": -14.377184273571,
+      "lonDeg": 152.00646912752,
+      "altKm": 426.6354965876,
+      "timestamp": 1795017022
+    }
+  },
+  "worst": [
+    {
+      "noradId": 35579,
+      "name": "FALCON 1 R/B",
+      "type": "R/B",
+      "regime": "LEO",
+      "ageDays": 1.0399658218525074,
+      "groundKm": 0.04713406846833316,
+      "altDiffKm": 0.00014735653905972868,
+      "ok": true
+    },
+    {
+      "noradId": 59749,
+      "name": "STARLINK-31677",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6199678018527561,
+      "groundKm": 0.04538260819051674,
+      "altDiffKm": -0.00027077371731820676,
+      "ok": true
+    },
+    {
+      "noradId": 66134,
+      "name": "STARLINK-35525",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.39171795185230396,
+      "groundKm": 0.04483151473870408,
+      "altDiffKm": -0.00020353550382878893,
+      "ok": true
+    },
+    {
+      "noradId": 68722,
+      "name": "STARLINK-37271",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4558300818521005,
+      "groundKm": 0.044733030760749394,
+      "altDiffKm": 0.00013242815055036772,
+      "ok": true
+    },
+    {
+      "noradId": 62807,
+      "name": "STARLINK-32886",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.586770961851897,
+      "groundKm": 0.044595053916723214,
+      "altDiffKm": 0.00010388551942241975,
+      "ok": true
+    },
+    {
+      "noradId": 27867,
+      "name": "TITAN 3C TRANSTAGE DEB",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 3.3600000718519425,
+      "groundKm": 0.04455023792827236,
+      "altDiffKm": 0.002454471332839603,
+      "ok": true
+    },
+    {
+      "noradId": 49020,
+      "name": "NINGXIA-1 8",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.35681162185103804,
+      "groundKm": 0.04423627529721722,
+      "altDiffKm": 0.00003821580980911676,
+      "ok": true
+    },
+    {
+      "noradId": 68082,
+      "name": "STARLINK-37054",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9117934518517389,
+      "groundKm": 0.04401675515108843,
+      "altDiffKm": 0.000040514010436254466,
+      "ok": true
+    },
+    {
+      "noradId": 100410,
+      "name": "STARLINK-37996",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0765633118523492,
+      "groundKm": 0.04398469617731311,
+      "altDiffKm": 0.0003006724609235789,
+      "ok": true
+    },
+    {
+      "noradId": 52645,
+      "name": "STARLINK-3973",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.40994213185063116,
+      "groundKm": 0.043858885128419775,
+      "altDiffKm": 0.00004156370391683595,
+      "ok": true
+    }
+  ]
+}
