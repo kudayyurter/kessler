@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-19",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-19T12:41:32.322808+00:00",
+  "timeMs": 1795103679000,
+  "snapshotAgeHours": 3.2185216666666667,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.04492667451815347,
+      "p95Km": 0.04303210309800349
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04633716320517249,
+      "p95Km": 0.04110764238911241
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.043907567175338676,
+      "p95Km": 0.041598456238142636
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.037196342278891875,
+      "p95Km": 0.037196342278891875
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 429,
+      "maxKm": 0.04509469275558577,
+      "p95Km": 0.04233709981700791
+    },
+    "HIGH": {
+      "n": 71,
+      "maxKm": 0.04633716320517249,
+      "p95Km": 0.04065349093501953
+    }
+  },
+  "age": {
+    "p50Days": 0.5985417288914433,
+    "p95Days": 2.7142310188886856,
+    "staleShare": 0.044
+  },
+  "iss": {
+    "groundKm": 0.3244274703227438,
+    "altDiffKm": 0.008991083324247029,
+    "theirs": {
+      "latDeg": 27.981279497949,
+      "lonDeg": -21.935592546619,
+      "altKm": 414.44842946608,
+      "timestamp": 1795103679
+    }
+  },
+  "worst": [
+    {
+      "noradId": 32255,
+      "name": "ARIANE 5 DEB [SYLDA]",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 2.4801671088889794,
+      "groundKm": 0.04633716320517249,
+      "altDiffKm": 0.0016705756174815178,
+      "ok": true
+    },
+    {
+      "noradId": 27575,
+      "name": "DELTA 1 DEB",
+      "type": "DEB",
+      "regime": "LEO",
+      "ageDays": 0.44171329888802985,
+      "groundKm": 0.04509469275558577,
+      "altDiffKm": -0.0005235811011061742,
+      "ok": true
+    },
+    {
+      "noradId": 63456,
+      "name": "STARLINK-33737",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.2043391088895445,
+      "groundKm": 0.04492667451815347,
+      "altDiffKm": 0.0003727248142126882,
+      "ok": true
+    },
+    {
+      "noradId": 66076,
+      "name": "STARLINK-34801",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7806802088871708,
+      "groundKm": 0.04470481175348625,
+      "altDiffKm": 0.00023855298172748007,
+      "ok": true
+    },
+    {
+      "noradId": 69365,
+      "name": "STARLINK-37436",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6188035888897931,
+      "groundKm": 0.04447925857596696,
+      "altDiffKm": 0.0000010087578061757085,
+      "ok": true
+    },
+    {
+      "noradId": 68891,
+      "name": "KUIPER-00521",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4372457988880299,
+      "groundKm": 0.04444090912484401,
+      "altDiffKm": -0.00004463497020879004,
+      "ok": true
+    },
+    {
+      "noradId": 56142,
+      "name": "STARLINK-5376",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.0787744588894315,
+      "groundKm": 0.04422800640615178,
+      "altDiffKm": 0.00007861163845745978,
+      "ok": true
+    },
+    {
+      "noradId": 61911,
+      "name": "FALCON 9 R/B",
+      "type": "R/B",
+      "regime": "HIGH",
+      "ageDays": 1.5615119588894315,
+      "groundKm": 0.043907567175338676,
+      "altDiffKm": -0.0030227843908505747,
+      "ok": true
+    },
+    {
+      "noradId": 66069,
+      "name": "STARLINK-35279",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.140015488888776,
+      "groundKm": 0.04383416142448108,
+      "altDiffKm": 0.00016007372994408797,
+      "ok": true
+    },
+    {
+      "noradId": 62271,
+      "name": "STARLINK-11489 [DTC]",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.1798431488913077,
+      "groundKm": 0.043772113473666704,
+      "altDiffKm": -0.000010776311796689697,
+      "ok": true
+    }
+  ]
+}
