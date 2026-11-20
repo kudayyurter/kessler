@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-20",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-20T12:41:32.336472+00:00",
+  "timeMs": 1795189089000,
+  "snapshotAgeHours": 2.9435177777777777,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.046244491243459904,
+      "p95Km": 0.042846891682793535
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.0423305106394637,
+      "p95Km": 0.04062899351580653
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.040880269223542084,
+      "p95Km": 0.040870422934628774
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.036785859005433956,
+      "p95Km": 0.036785859005433956
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 428,
+      "maxKm": 0.046244491243459904,
+      "p95Km": 0.04208046396065101
+    },
+    "HIGH": {
+      "n": 72,
+      "maxKm": 0.0423305106394637,
+      "p95Km": 0.04140989856624031
+    }
+  },
+  "age": {
+    "p50Days": 0.503259155553182,
+    "p95Days": 3.654861005557025,
+    "staleShare": 0.072
+  },
+  "iss": {
+    "groundKm": 0.5242968420571846,
+    "altDiffKm": -0.007337080418210462,
+    "theirs": {
+      "latDeg": 19.64301369484,
+      "lonDeg": 115.27481413728,
+      "altKm": 419.93620922581,
+      "timestamp": 1795189089
+    }
+  },
+  "worst": [
+    {
+      "noradId": 52939,
+      "name": "POEM",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4513731955549452,
+      "groundKm": 0.046244491243459904,
+      "altDiffKm": -0.000026054271927478112,
+      "ok": true
+    },
+    {
+      "noradId": 57346,
+      "name": "STARLINK-6359",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4900720955544931,
+      "groundKm": 0.045325210062936605,
+      "altDiffKm": -0.000014255577639232797,
+      "ok": true
+    },
+    {
+      "noradId": 41167,
+      "name": "KENT RIDGE 1",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8045839255551939,
+      "groundKm": 0.0448683351362774,
+      "altDiffKm": 0.00018261084466075772,
+      "ok": true
+    },
+    {
+      "noradId": 62529,
+      "name": "STARLINK-32789",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.5864973155551486,
+      "groundKm": 0.044834269024207056,
+      "altDiffKm": -0.00020602522494073128,
+      "ok": true
+    },
+    {
+      "noradId": 51992,
+      "name": "STARLINK-3643",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.35616349555686666,
+      "groundKm": 0.044391130964602954,
+      "altDiffKm": -0.00015745967624525292,
+      "ok": true
+    },
+    {
+      "noradId": 60277,
+      "name": "STARLINK-32135",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.4579823855562563,
+      "groundKm": 0.04394654537514576,
+      "altDiffKm": 0.0002260895201970925,
+      "ok": true
+    },
+    {
+      "noradId": 52276,
+      "name": "STARLINK-3778",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.266758495554041,
+      "groundKm": 0.04355223024723545,
+      "altDiffKm": -0.0001440853085910021,
+      "ok": true
+    },
+    {
+      "noradId": 65645,
+      "name": "STARLINK-35237",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7187384855567085,
+      "groundKm": 0.043398800369047176,
+      "altDiffKm": -0.0002628049424515666,
+      "ok": true
+    },
+    {
+      "noradId": 63407,
+      "name": "STARLINK-33694",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.9456003855556911,
+      "groundKm": 0.04332926547619201,
+      "altDiffKm": -0.000038796896603798814,
+      "ok": true
+    },
+    {
+      "noradId": 60950,
+      "name": "YAOGAN-43 02F",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3289299355570475,
+      "groundKm": 0.04328339217843479,
+      "altDiffKm": -0.0002959759270311224,
+      "ok": true
+    }
+  ]
+}
