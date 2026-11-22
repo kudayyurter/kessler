@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-22",
+  "commit": "b753ea29039cd37f3cba3fa9a65ee9a361d3f8be",
+  "generatedAt": "2026-11-22T12:41:32.498276+00:00",
+  "timeMs": 1795358662000,
+  "snapshotAgeHours": 2.047083888888889,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 297,
+      "maxKm": 0.04484460160280691,
+      "p95Km": 0.04256563843449419
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04662436781122394,
+      "p95Km": 0.03992064234378003
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04434945761288565,
+      "p95Km": 0.04069615850381818
+    },
+    "UNK": {
+      "n": 8,
+      "maxKm": 0.04234403383277136,
+      "p95Km": 0.04234403383277136
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 427,
+      "maxKm": 0.04484460160280691,
+      "p95Km": 0.04221328556393508
+    },
+    "HIGH": {
+      "n": 73,
+      "maxKm": 0.04662436781122394,
+      "p95Km": 0.040121596741313145
+    }
+  },
+  "age": {
+    "p50Days": 0.5078689385166875,
+    "p95Days": 2.1425052685179535,
+    "staleShare": 0.038
+  },
+  "iss": {
+    "groundKm": 0.5299149796740349,
+    "altDiffKm": 0.01629599075204169,
+    "theirs": {
+      "latDeg": -37.085745988999,
+      "lonDeg": -83.132586647098,
+      "altKm": 431.05077688648,
+      "timestamp": 1795358662
+    }
+  },
+  "worst": [
+    {
+      "noradId": 28914,
+      "name": "ARIANE 5 DEB [SYLDA]",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 0.3386237985172978,
+      "groundKm": 0.04662436781122394,
+      "altDiffKm": 0.0013463749478432874,
+      "ok": true
+    },
+    {
+      "noradId": 62399,
+      "name": "BANDWAGON-2 OBJECT Y",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3200058685189706,
+      "groundKm": 0.04484460160280691,
+      "altDiffKm": 0.0001279249229355628,
+      "ok": true
+    },
+    {
+      "noradId": 64753,
+      "name": "SHIYAN-28B 01",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.33202063851815683,
+      "groundKm": 0.044548958977950165,
+      "altDiffKm": 0.0003435712101236277,
+      "ok": true
+    },
+    {
+      "noradId": 59446,
+      "name": "HAWK-9A",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.3000946885172526,
+      "groundKm": 0.0444832790035018,
+      "altDiffKm": -0.0002939278198255124,
+      "ok": true
+    },
+    {
+      "noradId": 59536,
+      "name": "STARLINK-31721",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3260895385177047,
+      "groundKm": 0.04441979717828467,
+      "altDiffKm": 0.00012997546923543268,
+      "ok": true
+    },
+    {
+      "noradId": 21891,
+      "name": "DELTA 2 R/B(1)",
+      "type": "R/B",
+      "regime": "LEO",
+      "ageDays": 0.45539211851897066,
+      "groundKm": 0.04434945761288565,
+      "altDiffKm": -0.00004903925469079695,
+      "ok": true
+    },
+    {
+      "noradId": 57249,
+      "name": "STARLINK-5517",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.42806380852028175,
+      "groundKm": 0.04419868254662414,
+      "altDiffKm": 0.0002510100188715114,
+      "ok": true
+    },
+    {
+      "noradId": 46074,
+      "name": "STARLINK-1549",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.3641087985172978,
+      "groundKm": 0.04337466998269082,
+      "altDiffKm": 0.00010057923384465539,
+      "ok": true
+    },
+    {
+      "noradId": 44349,
+      "name": "FORMOSAT 7-1",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.30429275851779514,
+      "groundKm": 0.04337215655729623,
+      "altDiffKm": 0.00005808108414839808,
+      "ok": true
+    },
+    {
+      "noradId": 27027,
+      "name": "ARIANE 3 DEB",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 0.4330210885196262,
+      "groundKm": 0.04321067619149902,
+      "altDiffKm": 0.004150910286625731,
+      "ok": true
+    }
+  ]
+}
