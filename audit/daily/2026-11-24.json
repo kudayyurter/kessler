@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-24",
+  "commit": "2765075b31937fa05392dc1538e0e9e57b2199a8",
+  "generatedAt": "2026-11-24T12:41:31.914514+00:00",
+  "timeMs": 1795543006000,
+  "snapshotAgeHours": 5.253912777777778,
+  "sampled": 500,
+  "failed": 0,
+  "failures": {
+    "site": 0,
+    "reference": 0,
+    "both": 0
+  },
+  "byType": {
+    "PAY": {
+      "n": 298,
+      "maxKm": 0.04332762186906744,
+      "p95Km": 0.041658762339443246
+    },
+    "DEB": {
+      "n": 160,
+      "maxKm": 0.04448574089595591,
+      "p95Km": 0.04017076348015002
+    },
+    "R/B": {
+      "n": 35,
+      "maxKm": 0.04258209897721433,
+      "p95Km": 0.04125620577006078
+    },
+    "UNK": {
+      "n": 7,
+      "maxKm": 0.03938074524339354,
+      "p95Km": 0.03938074524339354
+    }
+  },
+  "byRegime": {
+    "LEO": {
+      "n": 426,
+      "maxKm": 0.04332762186906744,
+      "p95Km": 0.041334155933285974
+    },
+    "HIGH": {
+      "n": 74,
+      "maxKm": 0.04448574089595591,
+      "p95Km": 0.0404560157562156
+    }
+  },
+  "age": {
+    "p50Days": 1.1153976796298557,
+    "p95Days": 3.204292809629087,
+    "staleShare": 0.056
+  },
+  "iss": {
+    "groundKm": 0.006003765461089907,
+    "altDiffKm": 0.0022268710359298893,
+    "theirs": {
+      "latDeg": -15.622941794185,
+      "lonDeg": -120.09763171368,
+      "altKm": 421.26946970771,
+      "timestamp": 1795543006
+    }
+  },
+  "worst": [
+    {
+      "noradId": 39511,
+      "name": "ARIANE 5 DEB [SYLDA]",
+      "type": "DEB",
+      "regime": "HIGH",
+      "ageDays": 1.3559471696274368,
+      "groundKm": 0.04448574089595591,
+      "altDiffKm": -0.00038006852020089354,
+      "ok": true
+    },
+    {
+      "noradId": 46809,
+      "name": "YAOGAN-30 08C",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6576096996307373,
+      "groundKm": 0.04332762186906744,
+      "altDiffKm": 0.00023891428509159596,
+      "ok": true
+    },
+    {
+      "noradId": 62482,
+      "name": "STARLINK-32699",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.684699169628002,
+      "groundKm": 0.0433093425619704,
+      "altDiffKm": 0.00018606859174497004,
+      "ok": true
+    },
+    {
+      "noradId": 64446,
+      "name": "STARLINK-34402",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 2.4412240296286125,
+      "groundKm": 0.04317974123499216,
+      "altDiffKm": 0.00011061095523245967,
+      "ok": true
+    },
+    {
+      "noradId": 46914,
+      "name": "KSM1-B",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.7520162896276403,
+      "groundKm": 0.042853519625784084,
+      "altDiffKm": 0.00036015294563185307,
+      "ok": true
+    },
+    {
+      "noradId": 57641,
+      "name": "STARLINK-30312",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.442547189630579,
+      "groundKm": 0.04278225232803253,
+      "altDiffKm": 0.00006528452200882384,
+      "ok": true
+    },
+    {
+      "noradId": 25544,
+      "name": "ISS (ZARYA)",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.8348095496311894,
+      "groundKm": 0.04271910404663916,
+      "altDiffKm": 0.0002011690210110828,
+      "ok": true
+    },
+    {
+      "noradId": 45367,
+      "name": "STARLINK-1273",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 0.6977632096297652,
+      "groundKm": 0.04260987290863473,
+      "altDiffKm": 0.0002164458813354031,
+      "ok": true
+    },
+    {
+      "noradId": 59,
+      "name": "THOR ABLESTAR R/B",
+      "type": "R/B",
+      "regime": "LEO",
+      "ageDays": 1.2556695996319807,
+      "groundKm": 0.04258209897721433,
+      "altDiffKm": -0.00002113104437739821,
+      "ok": true
+    },
+    {
+      "noradId": 53015,
+      "name": "STARLINK-4262",
+      "type": "PAY",
+      "regime": "LEO",
+      "ageDays": 1.9856938696289061,
+      "groundKm": 0.04255489807466561,
+      "altDiffKm": -0.00027325570715674985,
+      "ok": true
+    }
+  ]
+}
