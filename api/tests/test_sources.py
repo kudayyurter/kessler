@@ -80,3 +80,58 @@ def test_spacetrack_non_list_payload_raises():
     )
     with httpx.Client() as http, pytest.raises(SourceError, match="unexpected"):
         SpaceTrackClient(http, "me", "pw", sleep=NO_SLEEP).gp_all_on_orbit()
+
+
+class FakeClock:
+    """Each read advances time by `step` seconds."""
+
+    def __init__(self, step: float):
+        self.now = 0.0
+        self.step = step
+
+    def __call__(self) -> float:
+        self.now += self.step
+        return self.now
+
+
+class IterStream(httpx.SyncByteStream):
+    def __init__(self, chunks: list[bytes]):
+        self.chunks = chunks
+
+    def __iter__(self):
+        yield from self.chunks
+
+
+def slow_body(chunks: int = 5) -> httpx.Response:
+    return httpx.Response(200, stream=IterStream([b"OBJECT_NAME,X\n"] * chunks))
+
+
+@respx.mock
+def test_celestrak_slow_download_hits_the_deadline_and_fails_cleanly():
+    # 2026-11-21: satcat.csv trickled in so slowly that the job ran into the 10-minute
+    # Lambda timeout. Each attempt now has a total time budget.
+    route = respx.get(CELESTRAK_SATCAT_URL)
+    route.side_effect = lambda _req: slow_body()
+    client = CelesTrakClient(httpx.Client(), sleep=NO_SLEEP, clock=FakeClock(step=100))
+    with pytest.raises(SourceError, match="deadline"):
+        client.satcat_csv()
+    assert route.call_count == 3
+
+
+@respx.mock
+def test_celestrak_retries_after_a_slow_download_then_succeeds():
+    route = respx.get(CELESTRAK_SATCAT_URL)
+    route.side_effect = [slow_body(chunks=50), httpx.Response(200, text=SATCAT_HEAD)]
+    client = CelesTrakClient(httpx.Client(), sleep=NO_SLEEP, clock=FakeClock(step=10))
+    assert client.satcat_csv() == SATCAT_HEAD
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_spacetrack_gp_json_still_parses_through_the_streamed_read():
+    respx.post(SPACETRACK_LOGIN_URL).mock(return_value=httpx.Response(200, text='""'))
+    respx.get(SPACETRACK_GP_URL).mock(
+        return_value=httpx.Response(200, json=[{"NORAD_CAT_ID": "25544"}])
+    )
+    client = SpaceTrackClient(httpx.Client(), "me", "pw", sleep=NO_SLEEP, clock=FakeClock(step=1))
+    assert client.gp_all_on_orbit() == [{"NORAD_CAT_ID": "25544"}]

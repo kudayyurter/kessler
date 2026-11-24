@@ -17,10 +17,38 @@ SPACETRACK_GP_URL = (
 
 CSV_HEADER_PREFIX = "OBJECT_NAME,"
 ATTEMPTS = 3
+# Total time budget for one attempt, from sending the request to the last byte. httpx's own
+# timeout only bounds each wait for the next packet, so a slow but steady download can run
+# forever: on 2026-11-21 CelesTrak's satcat.csv did, and the job hit the 10-minute Lambda
+# timeout. 3 attempts x 120 s still leave time for the database work.
+ATTEMPT_DEADLINE_S = 120.0
 
 
 class SourceError(RuntimeError):
     """An upstream data source failed or returned something we refuse to ingest."""
+
+
+def _fetch(
+    http: httpx.Client, method: str, url: str, clock: Callable[[], float], **kwargs
+) -> httpx.Response:
+    """Send one request and read the body, giving up after ATTEMPT_DEADLINE_S."""
+    start = clock()
+    with http.stream(method, url, **kwargs) as response:
+        chunks = []
+        for chunk in response.iter_bytes():
+            chunks.append(chunk)
+            if clock() - start > ATTEMPT_DEADLINE_S:
+                raise httpx.ReadTimeout(
+                    f"download exceeded the {ATTEMPT_DEADLINE_S:.0f} s deadline",
+                    request=response.request,
+                )
+        content_type = response.headers.get("content-type")
+        return httpx.Response(
+            response.status_code,
+            content=b"".join(chunks),
+            headers={"content-type": content_type} if content_type else None,
+            request=response.request,
+        )
 
 
 def _request(
@@ -44,12 +72,18 @@ def _request(
 
 
 class CelesTrakClient:
-    def __init__(self, http: httpx.Client, sleep: Callable[[float], None] = time.sleep):
+    def __init__(
+        self,
+        http: httpx.Client,
+        sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
+    ):
         self.http = http
         self.sleep = sleep
+        self.clock = clock
 
     def _csv(self, url: str, what: str) -> str:
-        text = _request(lambda: self.http.get(url), what, self.sleep).text
+        text = _request(lambda: _fetch(self.http, "GET", url, self.clock), what, self.sleep).text
         if not text.startswith(CSV_HEADER_PREFIX):
             raise SourceError(f"{what}: unexpected response starting {text[:80]!r}")
         return text
@@ -68,23 +102,33 @@ class SpaceTrackClient:
         user: str,
         password: str,
         sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
     ):
         self.http = http
         self.user = user
         self.password = password
         self.sleep = sleep
+        self.clock = clock
 
     def gp_all_on_orbit(self) -> list[dict]:
         login = _request(
-            lambda: self.http.post(
-                SPACETRACK_LOGIN_URL, data={"identity": self.user, "password": self.password}
+            lambda: _fetch(
+                self.http,
+                "POST",
+                SPACETRACK_LOGIN_URL,
+                self.clock,
+                data={"identity": self.user, "password": self.password},
             ),
             "Space-Track login",
             self.sleep,
         )
         if "Failed" in login.text:
             raise SourceError("Space-Track login failed (check SPACETRACK_USER/SPACETRACK_PASS)")
-        response = _request(lambda: self.http.get(SPACETRACK_GP_URL), "Space-Track GP", self.sleep)
+        response = _request(
+            lambda: _fetch(self.http, "GET", SPACETRACK_GP_URL, self.clock),
+            "Space-Track GP",
+            self.sleep,
+        )
         try:
             data = response.json()
         except ValueError as exc:

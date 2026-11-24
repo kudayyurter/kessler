@@ -32,7 +32,7 @@ def run_job(
     with ExitStack() as stack:
         if http is None:
             http = stack.enter_context(
-                httpx.Client(timeout=180, headers={"User-Agent": USER_AGENT},
+                httpx.Client(timeout=60, headers={"User-Agent": USER_AGENT},
                              follow_redirects=True)
             )
         conn = stack.enter_context(connect(settings.database_url))
